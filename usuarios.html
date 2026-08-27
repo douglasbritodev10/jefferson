@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração de Usuários | Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --primary-dark: #B71C1C;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --border-color: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background: var(--bg-light);
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Navbar seguindo seu padrão */
+        .navbar {
+            background: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .btn-back { color: var(--text-main); text-decoration: none; font-size: 1.2rem; }
+        .user-info { font-weight: bold; font-size: 0.9rem; color: var(--primary); text-transform: uppercase; }
+
+        .nav-center h2 { font-size: 1.2rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+
+        .btn-logout { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+
+        .container { padding: 20px; max-width: 1000px; margin: 0 auto; }
+
+        /* Tabela Responsiva */
+        .card-tabela {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #f8f9fa; padding: 15px; text-align: left; font-size: 0.85rem; color: #666; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; }
+        .badge-adm { background: #ffebee; color: #c62828; }
+        .badge-log { background: #e3f2fd; color: #1565c0; }
+        .badge-lei { background: #f5f5f5; color: #616161; }
+
+        .actions { display: flex; gap: 10px; }
+        .btn-action { 
+            border: none; background: none; cursor: pointer; padding: 8px; 
+            border-radius: 6px; transition: 0.2s; 
+        }
+        .btn-edit { color: #1976D2; background: #e3f2fd; }
+        .btn-delete { color: #D32F2F; background: #ffebee; }
+        .btn-action:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        /* Modal Estilo Glass */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px;
+        }
+        .form-group { margin-bottom: 15px; text-align: left; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; color: #666; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; outline: none;
+        }
+
+        .btn-save { 
+            width: 100%; padding: 12px; background: var(--primary); color: white; 
+            border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        @media (max-width: 600px) {
+            th:nth-child(2), td:nth-child(2) { display: none; } /* Esconde email no celular */
+            .nav-center h2 { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="inicial.html" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <span id="txtUser" class="user-info">CARREGANDO...</span>
+        </div>
+        <div class="nav-center">
+            <h2>Gestão de Usuários</h2>
+        </div>
+        <div class="nav-right">
+            <button class="btn-logout" onclick="window.location.href='index.html'">SAIR</button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="card-tabela">
+            <table>
+                <thead>
+                    <tr>
+                        <th>USUÁRIO</th>
+                        <th>E-MAIL</th>
+                        <th>NÍVEL</th>
+                        <th>AÇÕES</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaUsers">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="modalEdit" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px;">Editar Usuário</h3>
+            <input type="hidden" id="editUid">
+            <div class="form-group">
+                <label>USERNAME</label>
+                <input type="text" id="editUsername" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label>NÍVEL DE ACESSO</label>
+                <select id="editNivel">
+                    <option value="ADM">ADM</option>
+                    <option value="LOGISTICA">LOGISTICA</option>
+                    <option value="LEITOR">LEITOR</option>
+                </select>
+            </div>
+            <button onclick="salvarEdicao()" class="btn-save">SALVAR ALTERAÇÕES</button>
+            <button onclick="fecharModal()" style="background:#eee; color:#333;" class="btn-save">CANCELAR</button>
+        </div>
+    </div>
+
+    <script type="module" src="js/usuarios.js"></script>
+</body>
+</html>

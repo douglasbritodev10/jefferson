@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recebimento do Dia - Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/exceljs/dist/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
+<style>
+    :root { 
+        --primary-blue: #0A497B; 
+        --primary-red: #D32F2F;
+        --bg: #eef2f7; 
+        --white: #ffffff; 
+    }
+    
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
+    
+    /* Navbar com Grid: 3 colunas (Esquerda, Centro, Direita) */
+    .navbar { 
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 10px 20px; 
+        background: var(--primary-blue); 
+        color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    /* Esquerda: Seta e Nome */
+    .nav-left { 
+        display: flex; 
+        align-items: center; 
+        gap: 12px; 
+    }
+
+    /* Correção Direta no Link de Voltar */
+    .nav-left a { 
+        color: #ffffff !important; 
+        font-size: 22px !important; 
+        text-decoration: none !important; 
+        display: inline-flex !important; 
+        align-items: center !important; 
+        justify-content: center !important;
+        transition: transform 0.2s, background-color 0.2s; 
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    .nav-left a i { color: #ffffff !important; }
+    .nav-left a:hover { background: rgba(255,255,255,0.15); transform: scale(1.1); }
+    
+    /* Estilização para o userNameDisplay */
+    .user-info { font-weight: bold; font-size: 14px; color: #ffffff; }
+
+    /* Centro: Suporte direto para a tag H2 */
+    .navbar h2 {
+        font-weight: bold;
+        font-size: 16px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-align: center;
+        white-space: nowrap;
+        margin: 0; 
+    }
+
+    /* Direita: Ajuste do Botão Sair direto da Tag */
+    .navbar button { 
+        justify-self: end;
+        background: transparent !important; 
+        border: 1px solid white !important; 
+        color: white !important; 
+        padding: 6px 16px !important; 
+        border-radius: 4px !important; 
+        cursor: pointer; 
+        font-weight: bold;
+        transition: 0.2s;
+    }
+    .navbar button:hover { background: white !important; color: var(--primary-blue) !important; }
+
+    /* Painel Gráfico Central */
+    .painel-estatistico { 
+        background: white; margin: 15px; border-radius: 8px; padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .chart-section { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: center; gap: 20px; }
+    .chart-container { width: 280px; height: 280px; position: relative; }
+    
+    #resumoSituacoes { 
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); 
+        gap: 12px; flex: 1; max-width: 600px;
+    }
+    .legenda-item {
+        background: #f8f9fa; padding: 10px 12px; border-radius: 6px;
+        display: flex; align-items: center; border-left: 5px solid #ccc;
+        font-size: 11px; font-weight: bold; box-shadow: 1px 1px 4px rgba(0,0,0,0.04);
+        transition: 0.2s;
+    }
+    .legenda-item:hover { background: #f0f0f0; transform: translateX(5px); }
+
+    .indicador-badge {
+        margin: 15px auto 0; width: fit-content; border: 1px solid #0288d1;
+        padding: 8px 24px; border-radius: 20px; font-weight: bold; background: #fff; color: #333;
+    }
+
+    /* Barra de Ações */
+    .acoes-barra { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin: 15px; }
+    .busca-container { position: relative; width: 250px; }
+    .busca-container input { width: 100%; padding: 8px 12px 8px 30px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+    .busca-container i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #888; font-size: 13px; }
+    .btn-compartilhar { background: #008eff; color: white; border: none; padding: 8px 16px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+    /* Tabela Principal */
+    .table-container { margin: 15px; background: white; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+    .table-responsive { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1100px; text-align: center; }
+    thead th { background: var(--primary-blue); color: white; padding: 10px 4px; border: 1px solid #063357; font-weight: normal; }
+    .th-content { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .th-content span { font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .btn-filter-ui { 
+        width: 85%; max-width: 110px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4);
+        color: white; font-size: 10px; padding: 3px 0; border-radius: 3px; cursor: pointer; text-align: center; font-weight: bold;
+    }
+    tbody td { padding: 10px 6px; border: 1px solid #e0e0e0; vertical-align: middle; }
+    tbody tr:hover { background: #f1f7ff !important; }
+
+    /* Botão do Olhinho */
+    .btn-view-action {
+        background: var(--primary-blue); color: white; border: none;
+        padding: 6px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s;
+    }
+    .btn-view-action:hover { background: #0288d1; }
+
+    /* ESTRUTURA DOS MODAIS */
+    .modal-overlay { 
+        display: none; position: fixed; top:0; left:0; width:100%; height:100%; 
+        background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center;
+        backdrop-filter: blur(2px);
+    }
+    .modal-glass { 
+        background: white; padding: 20px; border-radius: 12px; width: 95%; max-width: 400px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3); animation: slideUp 0.3s ease-out;
+        box-sizing: border-box;
+    }
+
+    #modalComposicao .modal-glass { 
+        max-width: 95vw; 
+        width: 1350px;    
+        max-height: 90vh; 
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header { 
+        display: flex; align-items: center; justify-content: flex-start;
+        margin-bottom: 15px; padding-bottom: 12px; border-bottom: 2px solid #f4f4f4; gap: 15px;
+        flex-shrink: 0;
+    }
+    .modal-header .fa-times { order: -1; font-size: 20px; color: var(--primary-red); cursor: pointer; }
+    .modal-header h2, .modal-header span { font-weight: bold; flex-grow: 1; margin: 0; font-size: 16px; color: #333; }
+
+    .modal-body { 
+        max-height: 75vh; 
+        overflow-y: auto; 
+        overflow-x: auto; 
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .modal-body table { 
+        width: 100%; 
+        border-collapse: collapse;
+        border: 1px solid #eee; 
+        min-width: 100%; 
+    }
+    .modal-body th, .modal-body td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #eee;
+    }
+
+    .pagination { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid #eee; }
+
+    /* ==========================================
+       ⚡ REGRAS DE ADAPTAÇÃO PARA CELULAR (MOBILE)
+       ========================================== */
+    @media (max-width: 768px) {
+        .navbar { grid-template-columns: auto 1fr auto; padding: 10px; }
+        .user-info { display: none; }
+        .navbar h2 { font-size: 13px; letter-spacing: 0; }
+        .navbar button { padding: 4px 10px !important; font-size: 11px !important; }
+        
+        /* Ajuste do Painel Estatístico no celular: empilha verticalmente */
+        .painel-estatistico {
+            padding: 15px 10px;
+            margin: 10px;
+        }
+        .chart-section {
+            flex-direction: column; /* Faz o gráfico ficar em cima e os dados embaixo */
+            gap: 15px;
+        }
+        .chart-container { 
+            width: 200px; 
+            height: 200px; 
+        }
+        
+        /* Ajuste da grade de resumo para ocupar duas colunas bem distribuídas */
+        #resumoSituacoes {
+            width: 100%;
+            grid-template-columns: repeat(2, 1fr); /* Divide em 2 colunas perfeitas na tela do celular */
+            gap: 8px;
+        }
+        .legenda-item {
+            padding: 8px;
+            font-size: 10px; /* Reduz levemente a fonte para não quebrar texto */
+        }
+        .indicador-badge {
+            margin-top: 12px;
+            padding: 6px 16px;
+            font-size: 12px;
+        }
+
+        /* Ajuste na barra de busca e botões para não esmagar */
+        .acoes-barra {
+            flex-direction: column-reverse; /* Busca em cima, botão embaixo ou vice-versa */
+            align-items: stretch;
+            margin: 10px;
+            gap: 8px;
+        }
+        .busca-container {
+            width: 100%;
+        }
+        .btn-compartilhar {
+            width: 100%;
+            text-align: center;
+        }
+        
+        #modalComposicao .modal-glass { 
+            width: 95%; 
+            max-height: 85vh; 
+        }
+        .modal-body table {
+            min-width: 600px; 
+        }
+        .pagination {
+            flex-direction: column;
+            gap: 10px;
+            text-align: center;
+        }
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="inicial.html" style="color: #ffffff; margin-right: 15px;"><i class="fas fa-arrow-left"></i></a>
+            <span id="userNameDisplay" class="user-info">...</span>
+        </div>
+        <h2>RECEBIMENTOS DO DIA</h2>
+        <button onclick="logout()">SAIR</button>
+    </nav>
+
+    <div class="painel-estatistico">
+        <div class="chart-section">
+            <div class="chart-container">
+                <canvas id="chartSituacao"></canvas>
+            </div>
+            <div id="resumoSituacoes"></div>
+        </div>
+        <div class="indicador-badge" id="infoTotal">CARREGANDO...</div>
+    </div>
+
+    <div class="acoes-barra">
+        <div class="busca-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="inputBusca" placeholder="Buscar carga ou fornecedor...">
+        </div>
+        <button class="btn-compartilhar" onclick="toggleDropdownExport()">COMPARTILHAR ▼</button>
+        <div id="menuExport" style="display:none; position:absolute; background:white; border:1px solid #ccc; right:15px; margin-top:80px; z-index:10; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+            <div style="padding:10px 20px; cursor:pointer;" onclick="exportarExcel()"><i class="fas fa-file-excel" style="color:green"></i> Excel</div>
+            <div style="padding:10px 20px; cursor:pointer;" onclick="exportarPDF()"><i class="fas fa-file-pdf" style="color:red"></i> PDF</div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="checkAll" onclick="marcarTodos(this)"></th>
+                        <th onclick="ordenarTabela('senhaAgendamento', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Ordem de Agenda <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-senhaAgendamento" onclick="abrirFiltro('senhaAgendamento', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('data', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Data <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-data" onclick="abrirFiltro('data', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('central', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Central <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-central" onclick="abrirFiltro('central', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('cargas', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Cargas <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-cargas" onclick="abrirFiltro('cargas', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('agendasituacao', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Status <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-agendasituacao" onclick="abrirFiltro('agendasituacao', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('fornecedor', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Fornecedor <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-fornecedor" onclick="abrirFiltro('fornecedor', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('tipoProduto', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Tipo <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-tipoProduto" onclick="abrirFiltro('tipoProduto', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('box', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Box <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-box" onclick="abrirFiltro('box', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th onclick="ordenarTabela('linhaSeparacao', this)" style="cursor:pointer">
+                            <div class="th-content">
+                                <span>Linha <i class="fas fa-sort"></i></span>
+                                <span class="btn-filter-ui" id="btn-filter-linhaSeparacao" onclick="abrirFiltro('linhaSeparacao', event)">FILTRAR</span>
+                            </div>
+                        </th>
+                        <th width="80">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
+        </div>
+        <div class="pagination">
+            <div id="infoPagina" style="font-size: 13px; color: #666;"></div>
+            <div id="botoesPagina" class="page-buttons"></div>
+        </div>
+    </div>
+
+    <div id="modalFiltro" class="modal-overlay">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <i class="fas fa-times" onclick="fecharModais()"></i>
+                <span id="nomeColunaFiltro">Filtrar</span>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button onclick="marcarTodosFiltro(true)" class="btn-page" style="flex:1">Todos</button>
+                    <button onclick="marcarTodosFiltro(false)" class="btn-page" style="flex:1">Limpar</button>
+                </div>
+                <div id="opcoesFiltro" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;"></div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="fecharModais()" class="btn-page" style="flex:1">Cancelar</button>
+                    <button onclick="aplicarFiltroColuna()" style="flex:2; background: #2e7d32; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalComposicao" class="modal-overlay">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <i class="fas fa-times" onclick="fecharModais()"></i>
+                <span id="tituloComp">Detalhes</span>
+            </div>
+            <div class="modal-body" id="detalhesItens"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdownExport() {
+            const menu = document.getElementById('menuExport');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+        function fecharModais() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none');
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.acoes-barra')) {
+                const menu = document.getElementById('menuExport');
+                if(menu) menu.style.display = 'none';
+            }
+            if (event.target.classList.contains('modal-overlay')) { fecharModais(); }
+        }
+    </script>
+    <script type="module" src="js/recebimento-do-dia.js"></script>
+</body>
+</html>

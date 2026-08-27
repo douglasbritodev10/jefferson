@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Agendamentos | Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+    <style>
+        :root {
+            --vermelho: #D32F2F;
+            --preto: #212121;
+            --fundo: #F0F2F5;
+            --branco: #FFFFFF;
+            --borda: #dddddd;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: var(--fundo);
+            color: var(--preto);
+            overflow-x: hidden;
+        }
+
+        /* Estilos de Cores por Tipo */
+        .tipo-amarelo {
+            background-color: #FFFF00 !important;
+            color: #000;
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .tipo-verde {
+            background-color: #4CAF50 !important;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .tipo-azul {
+            background-color: #00BFFF !important;
+            color: #fff;
+            font-weight: bold;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .navbar {
+            background: var(--vermelho);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            width: 100%;
+        }
+
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .logo span {
+            font-weight: 300;
+        }
+
+        /* CONTAINER AJUSTADO: Ocupa 100% da largura no PC */
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+            max-width: 100%;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--branco);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            border-bottom: 2px solid var(--fundo);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            font-size: 0.9rem;
+            color: var(--vermelho);
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .readonly {
+            background: #f0f0f0;
+            font-weight: bold;
+            color: var(--vermelho);
+        }
+
+        .btn-main {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .btn-save {
+            background: var(--vermelho);
+            color: white;
+        }
+
+        .btn-draft {
+            background: #607D8B;
+            color: white;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .export-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .btn-exp {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* TABELAS - AJUSTE DE LARGURA PARA PC */
+        .table-responsive {
+            background: white;
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 100%;
+            /* No PC preenche tudo, no mobile o min-width será alterado */
+        }
+
+        th {
+            background: #f1f1f1;
+            padding: 12px 10px;
+            text-align: left;
+            color: var(--preto);
+            border-bottom: 2px solid var(--vermelho);
+            border-right: 1px solid var(--borda);
+            cursor: pointer;
+            white-space: nowrap;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        th:last-child {
+            border-right: none;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            border-right: 1px solid #f0f0f0;
+        }
+
+        td:last-child {
+            border-right: none;
+        }
+
+        tr:hover {
+            background-color: #fafafa;
+        }
+
+        /* MODAIS: CORREÇÃO PARA NÃO CAIR NO RODAPÉ */
+        .modal {
+            display: none;
+            position: fixed;
+            /* Fixa na tela */
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            overflow-y: auto;
+            backdrop-filter: blur(2px);
+            /* Efeito suave de fundo */
+        }
+
+        .modal-content {
+            background-color: var(--branco);
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: animatetop 0.3s;
+            /* Animação de entrada */
+        }
+
+        @keyframes animatetop {
+            from {
+                top: -300px;
+                opacity: 0
+            }
+
+            to {
+                top: 0;
+                opacity: 1
+            }
+        }
+
+        /* Rascunhos */
+        .secao-rascunho {
+            border: 2px dashed #607D8B;
+            background: #f8f9fb;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+
+            .export-actions {
+                width: 100%;
+                justify-content: space-between;
+                margin-top: 10px;
+                margin-left: 0;
+            }
+
+            .btn-exp {
+                flex: 1;
+                justify-content: center;
+            }
+
+            table {
+                min-width: 1000px;
+                /* Força um tamanho maior para a tabela criar o scroll lateral e os dados não ficarem amassados */
+            }
+        }
+
+        /* AJUSTES EXCLUSIVOS E ROBUSTOS PARA CELULARES */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 10px 15px;
+            }
+
+            .navbar .logo {
+                font-size: 1rem;
+            }
+
+            /* Reformata os filtros para empilharem verticalmente e ocuparem espaço total */
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .filter-bar .form-group,
+            .filter-bar input[type="text"] {
+                width: 100% !important;
+                flex: none !important;
+            }
+
+            .filter-bar input[type="text"] {
+                height: 41px;
+            }
+
+            /* Garante que os botões de exportação e dropdown fiquem um ao lado do outro ou empilhem perfeitamente */
+            .export-actions {
+                flex-direction: column !important;
+                width: 100% !important;
+                gap: 8px !important;
+                margin-top: 5px;
+            }
+
+            .export-actions .btn-exp,
+            .export-actions .dropdown,
+            .export-actions .dropdown button {
+                width: 100% !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center;
+                padding: 12px 10px !important;
+                font-size: 0.85rem !important;
+            }
+
+            /* Corrige o menu flutuante de exportação para abrir de forma legível no mobile */
+            #menuExport {
+                width: 100% !important;
+                position: relative !important;
+                box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1) !important;
+                margin-top: 2px !important;
+            }
+
+            /* Cabeçalho da seção de rascunhos em coluna no celular */
+            .secao-rascunho>div:first-child {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .secao-rascunho .btn-exp {
+                width: 100% !important;
+                padding: 12px !important;
+            }
+
+            /* Ajustes nos Modais para Telas Pequenas */
+            .modal-content {
+                margin: 15% auto;
+                padding: 15px;
+                width: 95%;
+            }
+
+            /* Inputs de adição rápida de composição em linha ou bloco */
+            .modal-content div[style*="display:flex; gap:5px;"] {
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+
+            #itemCod {
+                width: 25% !important;
+            }
+
+            #itemDesc {
+                width: 45% !important;
+                flex: none !important;
+            }
+
+            #itemQtd {
+                width: 20% !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="inicial.html" style="color:white; text-decoration:none;"><i class="fas fa-chevron-left"></i> <span
+                    id="user-display">---</span></a>
+        </div>
+        <div class="logo">MÓVEIS <span>SIMONETTI</span></div>
+        <button onclick="location.href='index.html'"
+            style="background:none; border:1px solid white; color:white; padding:5px 12px; border-radius:5px; cursor:pointer;">SAIR</button>
+    </nav>
+
+    <div class="container">
+        <aside>
+            <section class="card">
+                <div class="card-header">
+                    <h3>Dados da Agenda</h3>
+                    <button onclick="resetaForm()" title="Resetar e Gerar Nova Senha"
+                        style="border:none; background:none; cursor:pointer; color:#666;"><i
+                            class="fas fa-sync-alt"></i></button>
+                </div>
+                <div class="form-group">
+                    <label>Senha Agendamento</label>
+                    <input type="text" id="senhaAgendamento" readonly class="readonly">
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="dataAgendamento">
+                </div>
+                <div class="form-group">
+                    <label>Central</label>
+                    <select id="central">
+                        <option value="Selecione...">Selecione...</option>
+                        <option value="PINHEIROS">PINHEIROS</option>
+                        <option value="SERRA">SERRA</option>
+                        <option value="BUERAREMA">BUERAREMA</option>
+                        <option value="CONQUISTA">CONQUISTA</option>
+                        <option value="CANCELADA">CANCELADA</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cargas / Transportes</label>
+                    <input type="text" id="cargas">
+                </div>
+                <div class="form-group">
+                    <label>Nº Pedido</label>
+                    <input type="text" id="pedido">
+                </div>
+                <div class="form-group">
+                    <label>Fornecedor <button onclick="abrirFornecedor()"
+                            style="border:none; background:none; color:var(--vermelho); cursor:pointer;"><i
+                                class="fas fa-plus-circle"></i></button></label>
+                    <select id="selectFornecedor">
+                        <option value="">Carregando...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Produto</label>
+                    <input type="text" id="tipoProduto" placeholder="Ex: ROUPEIRO, MESA...">
+                </div>
+                <div class="form-group">
+                    <label>Linha de Separação</label>
+                    <select id="linhaSeparacao">
+                        <option value="Selecione...">Selecione...</option>
+                        <option value="GRANDEZA 1">GRANDEZA 1</option>
+                        <option value="GRANDEZA 2">GRANDEZA 2</option>
+                        <option value="GRANDEZA 3">GRANDEZA 3</option>
+                        <option value="GRANDEZA 4">GRANDEZA 4</option>
+                        <option value="GRANDEZA 5">GRANDEZA 5</option>
+                        <option value="GRANDEZA 6">GRANDEZA 6</option>
+                        <option value="GRANDEZA 7">GRANDEZA 7</option>
+                        <option value="GRANDEZA 8">GRANDEZA 8</option>
+                        <option value="GRANDEZA 9">GRANDEZA 9</option>
+                        <option value="GRANDEZA 10">GRANDEZA 10</option>
+                        <option value="MIUDEZA 1">MIUDEZA 1</option>
+                        <option value="EMBALADO">EMBALADO</option>
+                        <option value="EMBALADO 1">EMBALADO 1</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="border: 1px dashed var(--vermelho); padding: 10px; border-radius: 8px;">
+                    <label style="color:var(--vermelho);">Importar Composição (Excel)</label>
+                    <input type="file" id="inputExcel" accept=".xlsx, .xls">
+                </div>
+
+                <div class="form-group" style="border: 1px dashed var(--vermelho); padding: 10px; border-radius: 8px;">
+                    <label style="color:var(--vermelho);">Importar Planilha em Massa (Várias Cargas)</label>
+                    <input type="file" id="inputExcelMassa" accept=".xlsx, .xls">
+                </div>
+
+                <button class="btn-main btn-save" id="btnSalvar">FINALIZAR AGENDAMENTO</button>
+                <button class="btn-main btn-draft" id="btnRascunho">SALVAR COMO RASCUNHO</button>
+                <button class="btn-main" id="btnAtualizar"
+                    style="display:none; background:var(--preto); color:white;">ATUALIZAR AGENDAMENTO</button>
+                <button class="btn-main" id="btnAtualizarRascunho"
+                    style="display:none; background:var(--preto); color:white;">ATUALIZAR RASCUNHO</button>
+                <button class="btn-main" id="btnCancelarEdicao" onclick="resetaForm()"
+                    style="display:none; background: #666; color: white;">CANCELAR EDIÇÃO</button>
+            </section>
+        </aside>
+
+        <main>
+            <div class="filter-bar">
+                <div class="form-group" style="margin:0; flex: 1;"><label>De:</label><input type="date"
+                        id="buscaInicio"></div>
+                <div class="form-group" style="margin:0; flex: 1;"><label>Até:</label><input type="date" id="buscaFim">
+                </div>
+                <div style="flex:2; display: flex; align-items: center; gap: 8px;">
+                    <input type="text" id="buscaGeral" placeholder="🔍 Buscar..."
+                        style="flex: 1; height: 41px; padding: 0 10px; border: 1px solid #ddd; border-radius: 8px;">
+                    <div
+                        style="background: #D32F2F; color: white; padding: 0 12px; height: 41px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        CARGAS: <span id="totalCargasAgendadas"
+                            style="margin-left: 5px; font-size: 1rem; color: #FFF;">0</span>
+                    </div>
+                </div>
+
+                <div class="export-actions" style="display: flex; gap: 10px; align-items: center;">
+                    <!-- NOVO: Botão Mover Selecionados para Rascunho -->
+                    <button onclick="moverSelecionadosParaRascunho()" class="btn-exp" style="background:#607D8B;"
+                        title="Mover agendamentos selecionados para Rascunho">
+                        <i class="fas fa-file-alt"></i> MOVER PARA RASCUNHO
+                    </button>
+
+                    <!-- Botão Copiar Selecionados -->
+                    <button onclick="copiarAgendamentosSelecionados()" class="btn-exp" style="background:#fb8c00;"
+                        title="Copiar para o WhatsApp/Área de Transferência">
+                        <i class="fas fa-copy"></i> COPIAR SELECIONADOS
+                    </button>
+
+                    <!-- Dropdown de Compartilhar/Exportar -->
+                    <div class="dropdown" style="position: relative; display: inline-block;">
+                        <button onclick="toggleDropdownExport()" class="btn-exp" style="background:#1565c0;">
+                            <i class="fas fa-share-alt"></i> COMPARTILHAR <i class="fas fa-caret-down"></i>
+                        </button>
+                        <div id="menuExport"
+                            style="display: none; position: absolute; right: 0; background-color: white; min-width: 180px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 1001; border-radius: 8px; margin-top: 5px;">
+                            <a href="#" onclick="exportarExcel('basico')"
+                                style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                    class="fas fa-file-excel" style="color: #2e7d32;"></i> Excel Básico</a>
+                            <a href="#" onclick="exportarExcel('completo')"
+                                style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                    class="fas fa-file-excel" style="color: #1b5e20;"></i> Excel Completo</a>
+                            <a href="#" onclick="exportarPDF('basico')"
+                                style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                    class="fas fa-file-pdf" style="color: #1565c0;"></i> PDF Básico</a>
+                            <a href="#" onclick="exportarPDF('completo')"
+                                style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px;"><i
+                                    class="fas fa-file-pdf" style="color: #d32f2f;"></i> PDF Completo</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="tabelaAgendas">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll"
+                                        onclick="toggleSelectAll(this)"></th>
+                                <th onclick="ordenarTabelaDefinitiva(0)">SENHA <i class="fas fa-sort"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(1)">DATA <i class="fas fa-sort"></i></th>
+                                <th onclick="abrirModalFiltroColuna('central')">CENTRAL <i class="fas fa-filter"
+                                        id="icon-filtro-central" style="font-size:0.7rem; margin-left:3px;"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(3)">CARGAS <i class="fas fa-sort"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(4)">PEDIDO <i class="fas fa-sort"></i></th>
+                                <th onclick="abrirModalFiltroColuna('fornecedor')">FORNECEDOR <i class="fas fa-filter"
+                                        id="icon-filtro-fornecedor" style="font-size:0.7rem; margin-left:3px;"></i></th>
+                                <th onclick="abrirModalFiltroColuna('tipoProduto')">TIPO <i class="fas fa-filter"
+                                        id="icon-filtro-tipoProduto" style="font-size:0.7rem; margin-left:3px;"></i>
+                                </th>
+                                <th onclick="abrirModalFiltroColuna('linhaSeparacao')">LINHA <i class="fas fa-filter"
+                                        id="icon-filtro-linhaSeparacao" style="font-size:0.7rem; margin-left:3px;"></i>
+                                </th>
+                                <th>AÇÕES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela"></tbody>
+                    </table>
+                </div>
+
+                <div class="secao-rascunho">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <h4><i class="fas fa-file-alt"></i> RASCUNHOS</h4>
+
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                            <!-- Botão para Finalizar os Rascunhos Selecionados em Massa -->
+                            <button onclick="finalizarRascunhosSelecionados()" class="btn-exp"
+                                style="background:#2e7d32;" title="Confirmar agendamento de todos selecionados">
+                                <i class="fas fa-check-double"></i> FINALIZAR SELECIONADOS
+                            </button>
+
+                            <!-- Botão Copiar Selecionados -->
+                            <button onclick="copiarRascunhosSelecionados()" class="btn-exp" style="background:#fb8c00;">
+                                <i class="fas fa-copy"></i> COPIAR SELECIONADOS
+                            </button>
+
+                            <!-- NOVO: Botão Excluir Selecionados -->
+                            <button onclick="excluirRascunhosSelecionados()" class="btn-exp" style="background:#d32f2f;"
+                                title="Excluir Rascunhos Selecionados">
+                                <i class="fas fa-trash-alt"></i> EXCLUIR SELECIONADOS
+                            </button>
+
+                            <!-- Dropdown de Compartilhar/Exportar Rascunhos -->
+                            <div class="dropdown" style="position: relative; display: inline-block;">
+                                <button onclick="toggleDropdownExportRascunho()" class="btn-exp"
+                                    style="background:#1565c0;">
+                                    <i class="fas fa-share-alt"></i> COMPARTILHAR <i class="fas fa-caret-down"></i>
+                                </button>
+                                <div id="menuExportRascunho"
+                                    style="display: none; position: absolute; right: 0; background-color: white; min-width: 180px; box-shadow: 0px 8px 16px rgba(0,0,0,0.2); z-index: 1001; border-radius: 8px; margin-top: 5px;">
+                                    <a href="#" onclick="exportarExcelRascunho('basico')"
+                                        style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                            class="fas fa-file-excel" style="color: #2e7d32;"></i> Excel Básico</a>
+                                    <a href="#" onclick="exportarExcelRascunho('completo')"
+                                        style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                            class="fas fa-file-excel" style="color: #1b5e20;"></i> Excel Completo</a>
+                                    <a href="#" onclick="exportarPDFRascunho('basico')"
+                                        style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px; border-bottom: 1px solid #eee;"><i
+                                            class="fas fa-file-pdf" style="color: #1565c0;"></i> PDF Básico</a>
+                                    <a href="#" onclick="exportarPDFRascunho('completo')"
+                                        style="color: black; padding: 12px 16px; text-decoration: none; display: block; font-size: 13px;"><i
+                                            class="fas fa-file-pdf" style="color: #d32f2f;"></i> PDF Completo</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table id="tabelaRascunhos">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="selectAllRascunhos"
+                                            onclick="toggleSelectAllRascunhos(this)"></th>
+                                    <th onclick="ordenarTabelaRascunho(0)">SENHA <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(1)">DATA <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(2)">CENTRAL <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(3)">CARGAS <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(4)">PEDIDO <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(5)">FORNECEDOR <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(6)">TIPO <i class="fas fa-sort"></i></th>
+                                    <th onclick="ordenarTabelaRascunho(7)">LINHA <i class="fas fa-sort"></i></th>
+                                    <th>AÇÕES</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoRascunhos"></tbody>
+                        </table>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <!-- ID corrigido para modalComposicao para bater com o JS -->
+    <div id="modalComposicao" class="modal">
+        <div class="modal-content">
+            <h3 id="tituloComp">Itens da Carga</h3>
+
+            <!-- Inputs para adição manual -->
+            <div style="display:flex; gap:5px; margin: 15px 0;">
+                <input type="text" id="itemCod" placeholder="Cód" style="width:80px; padding: 5px;">
+                <input type="text" id="itemDesc" placeholder="Descrição" style="flex:1; padding: 5px;">
+                <input type="number" id="itemQtd" placeholder="Qtd" style="width:80px; padding: 5px;">
+                <button onclick="adicionarItemManual()" class="btn-save"
+                    style="padding: 5px 15px; border-radius: 5px; border:none; color:white;">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <div class="table-responsive" style="max-height: 40vh;">
+                <!-- O JS injeta o conteúdo aqui. Ajustado para listaComposicaoModal -->
+                <div id="listaComposicaoModal"></div>
+
+                <!-- Se você preferir manter a estrutura de tabela pura, 
+                 o seu JS verComp precisará ser alterado para criar <tr> em vez de <div> -->
+            </div>
+
+            <div style="margin-top:15px; font-weight:bold; color:var(--vermelho);">
+                TOTAL: <span id="totalPecas">0</span>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button onclick="fecharModais()" class="btn-main" style="background:#666; color: white;">FECHAR</button>
+                <!-- ID corrigido para confirmarEdicaoItens para bater com o JS -->
+                <button onclick="confirmarEdicaoItens()" class="btn-main btn-save">SALVAR ALTERAÇÕES</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalFornecedor" class="modal">
+        <div class="modal-content">
+            <h3>Fornecedores</h3>
+            <div style="display:flex; gap:10px; margin:20px 0;">
+                <input type="text" id="nomeNovoForn" placeholder="Nome do Fornecedor"
+                    style="flex:1; padding:10px; border:1px solid #ddd; border-radius:8px;">
+                <button id="btnAddForn" class="btn-save"
+                    style="padding: 0 20px; border-radius: 8px; border:none; color:white;">Cadastrar</button>
+            </div>
+            <ul id="listaForn"
+                style="list-style:none; max-height:200px; overflow-y:auto; border:1px solid #eee; border-radius: 8px;">
+            </ul>
+            <button onclick="fecharModais()" class="btn-main" style="background:#eee; margin-top:10px;">FECHAR</button>
+        </div>
+    </div>
+
+    <!-- Modal Dinâmico para Filtro Múltiplo de Colunas -->
+    <div id="modalFiltroColuna" class="modal">
+        <div class="modal-content">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fundo); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 id="tituloModalFiltro" style="color: var(--vermelho); margin: 0;">Filtrar Opções</h3>
+                <button onclick="fecharModais()"
+                    style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666;"><i
+                        class="fas fa-times"></i></button>
+            </div>
+
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                Período selecionado: <b id="lblDataIni"></b> até <b id="lblDataFim"></b>
+            </p>
+
+            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                <input type="checkbox" id="chkMarcarTodosFiltro" onchange="toggleSelecionarTodasOpcoesFiltro(this)"
+                    style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="chkMarcarTodosFiltro" style="cursor: pointer; font-weight: bold;">Selecionar / Desmarcar
+                    Todos</label>
+            </div>
+
+            <ul id="listaOpcoesFiltro"
+                style="list-style: none; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
+                <!-- Opções injetadas dinamicamente via JS com checkboxes -->
+            </ul>
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="limparFiltroColuna()" class="btn-main"
+                    style="background: #757575; color: white; width: auto; padding: 10px 15px;">LIMPAR FILTRO</button>
+                <button onclick="confirmarFiltroColuna()" class="btn-main btn-save"
+                    style="width: auto; padding: 10px 20px;">APLICAR FILTRO</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/agendamento.js"></script>
+</body>
+
+</html>

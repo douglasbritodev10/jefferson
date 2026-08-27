@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Relatório de Cooperados | Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --primary-dark: #A12222;
+            --bg-light: #f4f7f6;
+            --border-color: rgba(255, 255, 255, 0.25);
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding-bottom: 30px;
+        }
+
+        /* Navbar Estilo Glassmorphism */
+        .navbar {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-voltar {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            color: #333;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .btn-voltar:hover {
+            background: rgba(0,0,0,0.08);
+        }
+
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #111;
+            text-align: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: rgba(0,0,0,0.05);
+            padding: 6px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .btn-sair {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-sair:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Container Principal */
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        /* Painel de Filtros Glassmorphism */
+        .filtro-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 25px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .filtro-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #555;
+            text-transform: uppercase;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            height: 41px;
+        }
+
+        /* Dropdown de Checkboxes */
+        .dropdown-checkbox {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-btn {
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            height: 41px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: white;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            z-index: 1010;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 10px;
+            top: 45px;
+        }
+
+        .dropdown-content.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 4px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .dropdown-item input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .btn-gerar {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+            height: 41px;
+        }
+
+        .btn-gerar:hover {
+            background: #1b5e20;
+        }
+
+        /* Ações de Exportação */
+        .export-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: flex-end;
+        }
+
+        .btn-export {
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .btn-excel { background-color: #1f7246; }
+        .btn-excel:hover { background-color: #13462b; }
+        .btn-pdf { background-color: #b30000; }
+        .btn-pdf:hover { background-color: #800000; }
+
+        /* Blocos de Tabelas e Resultados */
+        .report-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #4bb17b;
+            color: #111;
+            font-weight: 700;
+            padding: 8px;
+            border: 1px solid #111;
+        }
+
+        td {
+            padding: 9px;
+            border: 1px solid #555555;
+            color: #111;
+        }
+
+        .dia-par { background-color: #ffffff; }
+        .dia-impar { background-color: #838A8A; }
+
+        .fw-bold { font-weight: bold; }
+        .text-end { text-align: right; }
+
+        /* Responsividade Mobile */
+        @media(max-width: 768px) {
+            .navbar {
+                flex-direction: row;
+                justify-content: space-between;
+                padding: 10px 15px;
+            }
+            .page-title {
+                display: none;
+            }
+            .nav-left {
+                width: auto;
+            }
+            .nav-right {
+                width: auto;
+                gap: 8px;
+            }
+            .btn-sair {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+            .filtro-grid {
+                grid-template-columns: 1fr;
+            }
+            .export-actions {
+                justify-content: center;
+                width: 100%;
+            }
+            .btn-export {
+                flex: 1;
+                justify-content: center;
+            }
+            table, thead, tbody, th, td, tr {
+                display: block;
+            }
+            thead tr {
+                position: absolute;
+                top: -9999px;
+                left: -9999px;
+            }
+            tr {
+                border: 1px solid #ccc;
+                margin-bottom: 10px;
+                border-radius: 8px;
+                padding: 5px;
+                background: white !important;
+            }
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%;
+                text-align: right;
+            }
+            td:before {
+                position: absolute;
+                top: 12px;
+                left: 12px;
+                width: 45%;
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: bold;
+                content: attr(data-label);
+            }
+            td:last-child {
+                border-bottom: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <button class="btn-voltar" onclick="window.location.href='inicial.html'" title="Voltar ao Painel">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <span class="user-info" id="user-display">Carregando...</span>
+        </div>
+        
+        <div class="page-title">Relatório Financeiro de Cooperados</div>
+        
+        <div class="nav-right">
+            <button class="btn-sair" onclick="window.location.href='index.html'">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="filtro-card">
+            <div class="filtro-grid">
+                <div class="form-group">
+                    <label>Data Inicial:</label>
+                    <input type="date" id="dataInicio">
+                </div>
+                <div class="form-group">
+                    <label>Data Final:</label>
+                    <input type="date" id="dataFim">
+                </div>
+                <div class="form-group">
+                    <label>Filtrar Cooperados:</label>
+                    <div class="dropdown-checkbox">
+                        <div class="dropdown-btn" id="btnGatilhoDropdown">
+                            <span id="dropdownLabel">Todos os Cooperados</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-content" id="dropdownCooperados">
+                            <div class="dropdown-item" style="border-bottom: 1px solid #eee; font-weight: bold;">
+                                <input type="checkbox" id="chkTodos" onchange="marcarTodosCooperados(this.checked)"> SELECIONAR TODOS
+                            </div>
+                            <div id="listaCheckCooperados"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-gerar" id="btnDispararRelatorio">
+                    <i class="fas fa-sync"></i> GERAR RELATÓRIO
+                </button>
+            </div>
+        </div>
+
+        <div class="export-actions" id="botoesExportacao" style="display: none;">
+            <button class="btn-export btn-excel" onclick="exportarExcel()">
+                <i class="fas fa-file-excel"></i> Exportar Excel
+            </button>
+            <button class="btn-export btn-pdf" onclick="exportarPDF()">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+        </div>
+
+        <div class="report-section" id="secaoAgrupado" style="display: none;">
+            <div class="section-title">
+                <i class="fas fa-boxes-stacked"></i> Resumo de Movimentações por Agenda / Grupo
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaAgrupada">
+                    <thead>
+                        <tr class="table-dark text-center">
+                            <th>Data</th>
+                            <th>Fornecedor(es)</th>
+                            <th>Qtd Colaboradores</th>
+                            <th>Nomes dos Cooperados Activos</th>
+                            <th>Valor Total (R$)</th>
+                            <th>Líquido (70%)</th>
+                            <th>VALOR P/ CADA</th>
+                            <th>Valor 20% INSS</th>
+                            <th>VALOR C/ INSS</th>
+                           <th>Valor á Pagar (C/ INSS)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoAgrupado"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="report-section" id="secaoIndividual" style="display: none;">
+            <div class="section-title">
+                <i class="fas fa-user-check"></i> Valores Finais Líquidos a Pagar por Cooperado
+            </div>
+            <div class="table-responsive">
+                <table id="tabelaIndividual">
+                    <thead>
+                        <tr>
+                            <th data-label="Nome do Cooperado">Nome do Cooperado</th>
+                            <th data-label="Valor Bruto Rateado (R$)" class="text-end">Valor Bruto Rateado (R$)</th>
+                            <th data-label="INSS Próprio (+20%)" class="text-end">INSS Próprio (+20%)</th>
+                            <th data-label="Líquido Final a Receber (R$)" class="text-end">Líquido Final a Receber (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoIndividual"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { app } from './js/firebase-config.js'; // Mantém a inicialização saudável
+        
+        // Aguarda a árvore DOM estar pronta para linkar os botões físicos
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnRelatorio = document.getElementById('btnDispararRelatorio');
+            const btnDropdown = document.getElementById('btnGatilhoDropdown');
+
+            if(btnRelatorio) {
+                btnRelatorio.addEventListener('click', () => {
+                    if (typeof window.gerarRelatorio === 'function') {
+                        window.gerarRelatorio();
+                    } else {
+                        console.error("A função gerarRelatorio não foi exposta no arquivo relatorio-cooperados.js");
+                    }
+                });
+            }
+
+            if(btnDropdown) {
+                btnDropdown.addEventListener('click', () => {
+                    if (typeof window.toggleDropdown === 'function') {
+                        window.toggleDropdown();
+                    }
+                });
+            }
+        });
+    </script>
+
+    <script type="module" src="js/relatorio-cooperados.js"></script>
+</body>
+</html>

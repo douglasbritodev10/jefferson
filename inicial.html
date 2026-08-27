@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Logístico | Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body {
+            background: var(--bg-light);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar Clara */
+        .navbar {
+            background: white;
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo { font-size: 1.3rem; font-weight: 300; letter-spacing: 1px; color: #555; }
+        .logo span { color: var(--primary); font-weight: bold; }
+
+        .user-info { display: flex; align-items: center; gap: 15px; color: var(--text-muted); font-size: 0.9rem; }
+        
+        /* Botão Sair - Estilo Agendamento */
+        .btn-sair {
+            background: rgba(211, 47, 47, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(211, 47, 47, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+        }
+        
+        .btn-sair:hover { 
+            background: var(--primary); 
+            color: white;
+            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.2);
+        }
+
+        /* Main Content */
+        .container {
+            width: 100%;
+            padding: 50px 40px;
+            box-sizing: border-box;
+            flex-grow: 1;
+        }
+
+        header { text-align: left; margin-bottom: 40px; border-left: 5px solid var(--primary); padding-left: 20px; }
+        header h2 { font-size: 2.2rem; font-weight: 300; color: #222; }
+        header b { color: var(--primary); }
+        header p { color: var(--text-muted); margin-top: 5px; }
+
+        /* Grid de Navegação */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .nav-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 40px 25px;
+            border-radius: 20px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-main);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .nav-card i { 
+            font-size: 3rem; 
+            margin-bottom: 20px; 
+            color: var(--primary);
+            background: rgba(211, 47, 47, 0.05);
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .nav-card h3 { 
+            margin: 0 0 10px 0; 
+            font-size: 1.3rem; 
+            font-weight: 600;
+        }
+
+        .nav-card p { 
+            margin: 0; 
+            font-size: 0.95rem; 
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Hover Effects */
+        .nav-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+        }
+
+        .nav-card:hover i {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        /* Cor diferenciada para o caminhão do painel ADM */
+        .nav-card i.icone-adm {
+            color: #FF9800; /* Laranja Logístico */
+            background: rgba(255, 152, 0, 0.05);
+        }
+        
+        /* Efeito Hover do caminhão ADM para acompanhar a cor */
+        .nav-card:hover i.icone-adm {
+            background: #FF9800;
+            color: white;
+        }        
+
+        @media (max-width: 768px) {
+            .navbar { padding: 15px 20px; }
+            .user-info span { display: none; }
+            .container { padding: 30px 20px; }
+            header h2 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">MÓVEIS <span>SIMONETTI</span></div>
+        
+        <div class="user-info">
+            <i class="fas fa-user-circle fa-lg"></i>
+            <span id="user-display">---</span>
+            <button id="btnSair" class="btn-sair">
+                Sair <i class="fas fa-power-off"></i>
+            </button>
+        </div>
+    </nav>
+
+    <main class="container">
+        <header>
+            <h2>Portal <b>Logístico</b></h2>
+            <p id="data-atual">Selecione uma operation abaixo</p>
+        </header>
+
+        <div class="dashboard-grid">
+            <a href="agendamento.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-calendar-check"></i>
+                <h3>Agendamentos</h3>
+                <p>Gestão e criação de novas Agendas - nível ADM</p>
+            </a>
+            
+            <a href="cargas-do-dia.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-truck icone-adm"></i>
+                <h3>Cargas do Dia</h3>
+                <p>Situação das cargas no CD - nível ADM</p>
+            </a>
+            
+            <a href="cadastro-cooperados.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-users-cog"></i>
+                <h3>COOPERADOS</h3>
+                <p>Visualizar e Cadastrar - nível ADM</p>
+            </a>
+            
+            <a href="relatorio-cooperados.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-hand-holding-usd"></i>
+                <h3>Relatório de Pagamento</h3>
+                <p>Visualizar dados de pagamento - nível ADM</p>
+            </a>
+
+            <a href="historico.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-atlas"></i>
+                <h3>Histórico</h3>
+                <p>Visualizar ações - nível ADM</p>
+            </a>      
+
+            <a href="usuarios.html" class="nav-card acesso-adm" style="display: none;">
+                <i class="fas fa-user-lock"></i>
+                <h3>Administração</h3>
+                <p>Controle de usuários e acessos - nível ADM</p>
+            </a>
+            
+            <a href="gestao-notas.html" class="nav-card acesso-logistica" style="display: none;">
+                <i class="fas fa-tools"></i>
+                <h3>Ajustes das Cargas</h3>
+                <p>Gerenciar situações e pendências - ADM / LOGÍSTICA</p>
+            </a>
+            
+            <a href="monitoramento.html" class="nav-card acesso-leitor" style="display: none;">
+                <i class="fas fa-list-ul"></i>
+                <h3>Relatórios</h3>
+                <p>Consultar histórico e agendamentos</p>
+            </a>
+            
+            <a href="recebimento-do-dia.html" class="nav-card acesso-leitor" style="display: none;">
+                <i class="fas fa-truck"></i>
+                <h3>Cargas do Dia</h3>
+                <p>Situação das cargas no CD</p>
+            </a>
+            
+            <a href="consulta-notas.html" class="nav-card acesso-leitor" style="display: none;">
+                <i class="fas fa-tools"></i>
+                <h3>Ajuste NFe/CTe</h3>
+                <p>Consultar situação</p>
+            </a>            
+        </div>
+    </main>
+
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>

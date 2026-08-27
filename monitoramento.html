@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Agendamento | Móveis Simonetti</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Bibliotecas de Exportação -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --primary-dark: #B71C1C;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+            --shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--bg-light);
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        /* ==========================================
+           HEADER (Ajustado para não quebrar)
+           ========================================== */
+        .header-portal {
+            background: #fff;
+            padding: 12px 20px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+        }
+
+        .header-left { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            white-space: nowrap; 
+        }
+        .header-center { text-align: center; }
+        .header-right { text-align: right; }
+
+        .btn-back { font-size: 1.2rem; cursor: pointer; color: #666; transition: 0.2s; }
+        .btn-back:hover { color: var(--primary); }
+        
+        .btn-logout { 
+            background: var(--primary); 
+            border: none; 
+            color: white; 
+            padding: 8px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: bold;
+            transition: 0.3s;
+            font-size: 13px;
+        }
+        .btn-logout:hover { background: var(--primary-dark); }
+        
+        .titulo-sistema { color: var(--primary); font-weight: bold; font-size: 1.4rem; margin: 0; }
+
+        /* CONTAINER PRINCIPAL */
+        .main-container { padding: 20px; max-width: 100%; margin: auto; box-sizing: border-box; }
+
+        /* ==========================================
+           PAINEL DE CONTROLE (PC E CELULAR)
+           ========================================== */
+        .control-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            gap: 15px;
+        }
+
+        .left-controls {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+            flex: 1;
+        }
+
+        /* Controla o select do "Exibir" */
+        .control-group-select {
+            width: 80px; /* Tamanho fixo perfeito para os números de página */
+            flex-shrink: 0;
+        }
+
+        /* Controla a barra do "Pesquisar Geral" */
+        .control-group-search {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .control-group label {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .control-input {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            outline: none;
+            font-size: 14px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .control-input:focus { border-color: var(--primary); }
+
+        /* DROPDOWN COMPARTILHAR */
+        .dropdown { position: relative; flex-shrink: 0; }
+
+        .btn-share {
+            background: #1565c0;
+            color: white;
+            border: none;
+            padding: 11px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.3s;
+            font-size: 13px;
+        }
+        .btn-share:hover { background: #0d47a1; box-shadow: 0 4px 8px rgba(21, 101, 192, 0.3); }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.15);
+            z-index: 1001;
+            border-radius: 8px;
+            margin-top: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: var(--text-main);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: 0.2s;
+        }
+        .dropdown-content a:hover { background-color: #f8f9fa; color: var(--primary); }
+        
+        /* ÁRVORE DE FILTRO EXCEL */
+        .filter-tree-node { margin-left: 15px; display: none; }
+        .filter-tree-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; user-select: none; }
+        .filter-tree-toggle { cursor: pointer; width: 14px; text-align: center; color: #666; font-size: 11px; }
+        .filter-tree-item label { cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+        
+        /* TABELA */
+        .table-container { background: white; border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; width: 100%; }
+        .scroll-area { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        
+        thead th {
+            background: var(--primary);
+            color: white;
+            padding: 15px 10px;
+            font-size: 12px;
+            text-transform: uppercase;
+            text-align: center;
+            position: relative;
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .th-content { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        tbody td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; border-right: 1px solid #f0f0f0; font-size: 13px; }
+        tbody td:last-child { border-right: none; }
+
+        .badge-filtro {
+            background-color: #fff176;
+            color: #333;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+            border: 1px solid #fbc02d;
+            margin-top: 4px;
+        }
+
+        /* PAGINAÇÃO */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #fff;
+            border-top: 1px solid #eee;
+        }
+        .page-buttons { display: flex; gap: 5px; }
+        .btn-page { padding: 6px 12px; border: 1px solid #ddd; background: white; cursor: pointer; border-radius: 4px; font-size: 13px; }
+        .btn-page.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* MODAIS */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .modal-glass {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        #modalComposicao .modal-glass { max-width: 800px; }
+        .modal-header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; max-height: 75vh; overflow-y: auto; }
+
+        .option-disabled { opacity: 0.5; color: #999; font-style: italic; }
+        thead th:hover { background-color: var(--primary-dark) !important; }
+        .th-content span i { margin-left: 5px; font-size: 0.8rem; opacity: 0.7; }
+
+        /* ==========================================================================
+           ⚡ REGRAS EXCLUSIVAS PARA CELULAR (TELAS PEQUENAS)
+           ========================================================================== */
+        @media (max-width: 768px) {
+            /* 1. Correção total do Topo/Header no Celular */
+            .header-portal {
+                display: flex;
+                justify-content: space-between; /* Mantém os elementos na mesma linha */
+                align-items: center;
+                padding: 10px 15px;
+            }
+            .header-center { 
+                display: none; /* Oculta o título longo no celular para sobrar espaço real */
+            }
+            .header-left { 
+                gap: 8px; 
+            }
+            .header-left span { 
+                font-size: 12px; /* Diminui levemente o texto de boas-vindas */
+                max-width: 120px;
+                overflow: hidden;
+                text-overflow: ellipsis; /* Se o nome for gigante, põe '...' e não quebra a linha */
+            }
+            .btn-back { 
+                font-size: 1.1rem; 
+            }
+            .btn-logout { 
+                padding: 6px 12px; 
+                font-size: 11px; /* Botão menor e mais compacto */
+            }
+
+            /* 2. Correção dos Filtros no Celular */
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch; /* Faz os blocos preencherem o espaço lateral */
+                padding: 12px;
+                gap: 12px;
+            }
+            .left-controls {
+                display: flex;
+                flex-direction: row; /* Mantém na mesma linha lado a lado */
+                gap: 10px;
+                width: 100%;
+            }
+            .control-group-select {
+                width: 75px; /* Mantém o campo de paginação pequeno */
+            }
+            .control-group-search {
+                flex: 1; /* Faz a barra de pesquisa ocupar todo o resto do espaço disponível lateralmente */
+                max-width: none;
+            }
+            .btn-share {
+                width: 100%; /* Botão de compartilhar ocupa a linha de baixo inteira */
+                justify-content: center;
+            }
+            
+            /* Paginação compacta */
+            .pagination {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header-portal">
+        <div class="header-left">
+            <i class="fas fa-arrow-left btn-back" onclick="window.history.back()"></i>
+            <span style="font-size: 14px; font-weight: bold;">Olá, <span id="txtUser">USUÁRIO</span></span>
+        </div>
+        <div class="header-center">
+            <h1 class="titulo-sistema">AGENDAMENTO - MÓVEIS SIMONETTI</h1>
+        </div>
+        <div class="header-right">
+            <button class="btn-logout" onclick="window.location.href='index.html'">SAIR</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        
+        <div class="control-panel">
+            <div class="left-controls">
+                <div class="control-group control-group-select">
+                    <label>Exibir</label>
+                    <select id="selectPageSize" onchange="mudarTamanhoPagina()" class="control-input">
+                        <option value="25">25</option>
+                        <option value="50" selected>50</option>
+                        <option value="75">75</option>
+                        <option value="100">100</option>
+                   </select>
+               </div>
+                
+               <div class="control-group control-group-search">
+                   <label>Pesquisar Geral</label>
+                   <input type="text" id="inputBusca" placeholder="Buscar por fornecedor, senha..." 
+                          class="control-input" oninput="atualizarFiltros()">
+               </div>
+            </div>
+
+            <div class="dropdown">
+                <button onclick="toggleDropdownExport()" class="btn-share" id="btnShare">
+                    <i class="fas fa-share-alt"></i> COMPARTILHAR <i class="fas fa-caret-down"></i>
+                </button>
+                <div id="menuExport" class="dropdown-content">
+                    <a href="#" onclick="exportarExcel('basico')">
+                        <i class="fas fa-file-excel" style="color: #2e7d32;"></i> Excel Básico
+                    </a>
+                    <a href="#" onclick="exportarExcel('completo')">
+                        <i class="fas fa-file-excel" style="color: #1b5e20;"></i> Excel Completo
+                    </a>
+                    <a href="#" onclick="exportarPDF('basico')">
+                        <i class="fas fa-file-pdf" style="color: #1565c0;"></i> PDF Básico
+                    </a>
+                    <a href="#" onclick="exportarPDF('completo')">
+                        <i class="fas fa-file-pdf" style="color: #d32f2f;"></i> PDF Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+<div class="table-container">
+<div class="scroll-area">
+<table id="tabelaDados">
+<thead>
+    <tr>
+        <th width="40"><input type="checkbox" id="checkAll" onclick="marcarTodos(this)"></th>
+        
+        <th onclick="ordenarTabela('senhaAgendamento', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Senha <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-senhaAgendamento" onclick="abrirFiltro('senhaAgendamento', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('data', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Data <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-data" onclick="abrirFiltro('data', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('central', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Central <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-central" onclick="abrirFiltro('central', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('cargas', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Cargas <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-cargas" onclick="abrirFiltro('cargas', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('fornecedor', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Fornecedor <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-fornecedor" onclick="abrirFiltro('fornecedor', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('tipoProduto', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Tipo <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-tipoProduto" onclick="abrirFiltro('tipoProduto', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th onclick="ordenarTabela('linhaSeparacao', this)" style="cursor:pointer">
+            <div class="th-content">
+                <span>Linha <i class="fas fa-sort"></i></span>
+                <span id="btn-filter-linhaSeparacao" onclick="abrirFiltro('linhaSeparacao', event)" style="margin-top:5px; font-size: 0.65rem; cursor:pointer;">FILTRO</span>
+            </div>
+        </th>
+
+        <th width="50">Ações</th>
+    </tr>
+</thead>
+<tbody id="corpoTabela"></tbody>
+</table>
+            </div>
+
+            <div class="pagination">
+                <div id="infoPagina" style="font-size: 13px; color: #666;"></div>
+                <div class="page-buttons" id="botoesPagina"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FILTRO INTELIGENTE -->
+    <div id="modalFiltro" class="modal-overlay">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <span id="nomeColunaFiltro" style="font-weight: bold; text-transform: uppercase;">Filtrar</span>
+                <i class="fas fa-times" style="cursor:pointer" onclick="fecharModais()"></i>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button onclick="marcarTodosFiltro(true)" class="btn-page" style="flex:1">Marcar Todos</button>
+                    <button onclick="marcarTodosFiltro(false)" class="btn-page" style="flex:1">Desmarcar</button>
+                </div>
+                
+                <div id="opcoesFiltro" style="max-height: 300px; overflow-y: auto; border: 1px solid #eee; padding: 10px; border-radius: 8px;"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button onclick="fecharModais()" class="btn-page" style="flex:1">Cancelar</button>
+                    <button onclick="aplicarFiltroColuna()" class="btn-logout" style="flex:2; background: #2e7d32;">Aplicar Filtro</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHES -->
+    <div id="modalComposicao" class="modal-overlay">
+        <div class="modal-glass">
+            <div class="modal-header">
+                <h2 id="tituloComp" style="margin:0; font-size:1.2rem;">Detalhes do Agendamento</h2>
+                <i class="fas fa-times" style="cursor:pointer" onclick="fecharModais()"></i>
+            </div>
+            <div class="modal-body" id="detalhesItens"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDropdownExport() {
+            const menu = document.getElementById('menuExport');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+        window.onclick = function(event) {
+            if (!event.target.closest('.dropdown')) {
+                const menu = document.getElementById('menuExport');
+                if(menu) menu.style.display = 'none';
+            }
+        }
+    </script>
+
+    <script type="module" src="js/monitoramento.js"></script>
+</body>
+</html>

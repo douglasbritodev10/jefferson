@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cadastro de Cooperados | Móveis Simonetti</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --primary-dark: #B71C1C;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --border-color: #e0e0e0;
+            --sucesso: #2e7d32;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        body { background: var(--bg-light); color: var(--text-main); min-height: 100vh; }
+
+        /* NAVBAR RESPONSIVA */
+        .navbar {
+            background: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+
+        .user-info { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; }
+        .btn-back { color: var(--text-main); text-decoration: none; font-size: 1.2rem; }
+        
+        .page-title { 
+            position: absolute; left: 50%; transform: translateX(-50%); 
+            font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #666;
+            text-align: center; width: 40%;
+        }
+
+        .btn-logout { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+
+        /* FORMULÁRIO RESPONSIVO */
+        .card-form { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-row { display: flex; flex-direction: column; gap: 15px; }
+        
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.7rem; font-weight: bold; color: #888; }
+        .form-group input { padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; -webkit-appearance: none; }
+
+        .btn-save { background: var(--sucesso); color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.3s; }
+        .btn-save:active { transform: scale(0.98); }
+
+        /* BUSCA */
+        .search-box { position: relative; margin-bottom: 15px; }
+        .search-box input { width: 100%; padding: 12px 40px 12px 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 1rem; }
+        .search-box i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #999; }
+
+        /* TABELA QUE VIRA CARD NO CELULAR */
+        .card-tabela { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f8f9fa; }
+        th { padding: 15px; text-align: left; font-size: 0.75rem; color: #777; text-transform: uppercase; border-bottom: 2px solid #eee; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+
+        .actions { display: flex; gap: 15px; justify-content: flex-start; }
+        .btn-action { border: none; background: none; cursor: pointer; font-size: 1.2rem; }
+        .btn-edit { color: #1976D2; }
+        .btn-delete { color: var(--primary); }
+
+        /* MEDIA QUERIES PARA CELULAR */
+        @media (max-width: 600px) {
+            .page-title { display: none; } /* Esconde o título central no mobile para dar espaço */
+            
+            thead { display: none; } /* Esconde o cabeçalho da tabela */
+            
+            tr { display: block; border-bottom: 8px solid var(--bg-light); padding: 10px 0; }
+            td { display: block; text-align: right; padding: 8px 15px; border: none; }
+            
+            td::before { content: attr(data-label); float: left; font-weight: bold; color: #888; text-transform: uppercase; font-size: 0.7rem; }
+            
+            .actions { justify-content: flex-end; padding-top: 10px; border-top: 1px dashed #eee; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="user-info">
+            <a href="inicial.html" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <span id="userNameDisplay">CARREGANDO...</span>
+        </div>
+        <div class="page-title">Cooperados</div>
+        <button class="btn-logout" onclick="window.location.href='index.html'">SAIR</button>
+    </nav>
+
+    <main class="container">
+        <div class="card-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CPF DO COOPERADO</label>
+                    <input type="text" id="cpfCooperado" placeholder="000.000.000-00" inputmode="numeric">
+                </div>
+                <div class="form-group">
+                    <label>NOME COMPLETO</label>
+                    <input type="text" id="nomeCooperado" placeholder="Digite o nome completo" style="text-transform: uppercase;">
+                </div>
+                <button onclick="salvarCooperado()" class="btn-save" id="btnSalvar">
+                    <i class="fas fa-user-plus"></i> CADASTRAR COOPERADO
+                </button>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="inputBusca" placeholder="Pesquisar por nome ou CPF..." onkeyup="filtrarTabela()">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="card-tabela">
+            <table id="tabelaDados">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabelaCooperados">
+                    </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script type="module" src="js/cadastro-cooperados.js"></script>
+</body>
+</html>

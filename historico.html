@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Histórico de Ações | Móveis Simonetti</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --primary-dark: #B71C1C;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+        }
+
+        body { 
+            background: var(--bg-light); 
+            color: var(--text-main); 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column;
+        }
+
+        /* NAVBAR REESTRUTURADA CONFORME PEDIDO */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr; /* Divide em 3 partes perfeitas para centralizar o título */
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        /* Canto Esquerdo: Seta + Usuário */
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-self: start;
+        }
+
+        .btn-voltar-seta {
+            color: var(--text-main);
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+        }
+
+        .btn-voltar-seta:hover {
+            color: var(--primary);
+        }
+
+        .user-nav-info {
+            font-weight: 700;
+            color: #555;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #eee;
+            text-transform: uppercase;
+        }
+
+        /* Centro: Título centralizado */
+        .nav-center h2 {
+            font-size: 1.2rem;
+            color: #222;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .nav-center h2 span {
+            color: var(--primary);
+        }
+
+        /* Canto Direito: Botão Sair */
+        .nav-right {
+            justify-self: end;
+        }
+
+        .btn-sair-nav {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-sair-nav:hover {
+            background: #fff5f5;
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* CONTEÚDO PRINCIPAL */
+        .container {
+            flex: 1;
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 25px 20px;
+        }
+
+        /* FILTROS ALINHADOS EM LINHA ACIMA DA TABELA */
+        .card-filtros-linha {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            margin-bottom: 20px;
+        }
+
+        .flex-filtros {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        /* Inputs de data pequenos e enxutos */
+        .w-data { width: 160px; }
+        .w-busca { flex: 1; min-width: 250px; }
+
+        .form-group label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            color: var(--text-main);
+            transition: border-color 0.2s;
+            height: 40px;
+        }
+
+        .form-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-aplicar {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 25px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+            height: 40px;
+        }
+
+        .btn-aplicar:hover {
+            background: var(--primary-dark);
+        }
+
+        /* TABELA COM ROLAGEM LATERAL MOBILE */
+        .card-tabela {
+            background: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+            min-width: 700px; /* Mantém a estrutura firme na rolagem lateral */
+        }
+
+        th {
+            background: #f8f9fa;
+            color: #444;
+            font-weight: 700;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #eee;
+            color: var(--text-main);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Badges estilizadas para as ações */
+        .badge-acao {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .badge-padrao { background: #e8f0fe; color: #1a73e8; }
+        .badge-sucesso { background: #e6f4ea; color: #137333; }
+        .badge-perigo { background: #fce8e6; color: #c5221f; }
+        .badge-aviso { background: #fef7e0; color: #b06000; }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            .navbar {
+                grid-template-columns: auto 1fr;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+            .nav-center {
+                grid-column: 1 / -1;
+                order: 3; /* Move o título para baixo se for celular para não espremer */
+            }
+            .nav-right {
+                grid-column: 2;
+            }
+            .flex-filtros {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .w-data, .w-busca {
+                width: 100%;
+            }
+            .btn-aplicar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="inicial.html" class="btn-voltar-seta" title="Voltar ao Painel">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="user-nav-info" id="userNameDisplay">---</div>
+        </div>
+
+        <div class="nav-center">
+            <h2>HISTÓRICO DE <span>AÇÕES</span></h2>
+        </div>
+
+        <div class="nav-right">
+            <button id="btnSair" class="btn-sair-nav">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </button>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <div class="card-filtros-linha">
+            <div class="flex-filtros">
+                <div class="form-group w-data">
+                    <label>Data Inicial</label>
+                    <input type="date" id="dataInicial">
+                </div>
+
+                <div class="form-group w-data">
+                    <label>Data Final</label>
+                    <input type="date" id="dataFinal">
+                </div>
+
+                <div class="form-group w-busca">
+                    <label>Busca Geral</label>
+                    <input type="text" id="inputBuscaGeral" placeholder="Filtrar por usuário, ação ou senha...">
+                </div>
+
+                <button id="btnFiltrarBanco" class="btn-aplicar">
+                    <i class="fas fa-filter"></i> Aplicar Filtro
+                </button>
+            </div>
+        </div>
+
+        <div class="card-tabela">
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 160px;">Data / Hora</th>
+                            <th style="width: 160px;">Usuário</th>
+                            <th>Ação Efetuada</th>
+                            <th style="width: 140px;">Senha Ref.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpoHistorico">
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 25px;">
+                                Escolha o período acima e clique em <b>Aplicar Filtro</b> para carregar os dados.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script type="module" src="js/historico.js"></script>
+</body>
+</html>

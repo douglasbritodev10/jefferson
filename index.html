@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Móveis Simonetti</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0d1117">
+    <style>
+        :root {
+            --primary: #D32F2F;
+            --bg-light: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            background: var(--bg-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 50px 40px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        .logo-container h2 { 
+            color: #555; 
+            font-weight: 300; 
+            margin-bottom: 5px; 
+            font-size: 1.8rem;
+            letter-spacing: 1px;
+        }
+        
+        .logo-container h2 span { 
+            color: var(--primary); 
+            font-weight: bold; 
+        }
+
+        .login-card p { 
+            color: var(--text-muted); 
+            font-size: 1rem; 
+            margin-bottom: 35px; 
+        }
+        
+        .input-group { 
+            position: relative; 
+            margin-bottom: 20px; 
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            background: #fafafa;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus { 
+            border-color: var(--primary); 
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(211, 47, 47, 0.1);
+        }
+
+        .input-group input::placeholder {
+            color: #999;
+        }
+        
+        button {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        button:hover { 
+            background: #B71C1C; 
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(211, 47, 47, 0.3);
+        }
+
+        button:active { 
+            transform: translateY(0); 
+        }
+
+        /* ====== NOVOS ESTILOS ADICIONADOS ====== */
+        .forgot-password-container {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 20px;
+        }
+
+        .forgot-password-container a {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .forgot-password-container a:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        button.btn-pwa {
+            background: #333333;
+            margin-top: 15px;
+            display: none; /* Escondido por padrão, JavaScript ativa se puder instalar */
+        }
+
+        button.btn-pwa:hover {
+            background: #111111;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        /* ======================================= */
+
+        .footer-text {
+            margin-top: 25px;
+            font-size: 0.85rem;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-container">
+            <h2>MÓVEIS <span>SIMONETTI</span></h2>
+        </div>
+        <p>Portal Logístico</p>
+        
+        <div class="input-group">
+            <input type="text" id="loginField" placeholder="E-mail ou Usuário" autocomplete="username">
+        </div>
+        <div class="input-group">
+            <input type="password" id="passwordField" placeholder="Senha" autocomplete="current-password">
+        </div>
+        
+        <div class="forgot-password-container">
+            <a href="#" id="btnForgotPass">Esqueceu a senha?</a>
+        </div>
+        
+        <button id="btnLogin">Acessar Sistema</button>
+
+        <button id="btnInstallPWA" class="btn-pwa">Instalar Aplicativo</button>
+
+        <div class="footer-text">
+            &copy; 2026 Móveis Simonetti
+        </div>
+    </div>
+
+    <script type="module" src="js/auth.js"></script>
+</body>
+</html>
