@@ -4,12 +4,12 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.1/firebase
 import { getAuth } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyB8XbEwWWUV8Qm5-TghdTzFGgwHCsouTMI",
-    authDomain: "agendamento-ebe81.firebaseapp.com",
-    projectId: "agendamento-ebe81",
-    storageBucket: "agendamento-ebe81.firebasestorage.app",
-    messagingSenderId: "779314983745",
-    appId: "1:779314983745:web:2391f6e8f6e663559667c0"
+  apiKey: "AIzaSyCCsGv1dn1mbTfwWbM54ypBiSj9tnfrlH0",
+  authDomain: "estoque-600.firebaseapp.com",
+  projectId: "estoque-600",
+  storageBucket: "estoque-600.firebasestorage.app",
+  messagingSenderId: "864906020679",
+  appId: "1:864906020679:web:fa6ee3e0514b8824a2ee62"
 };
 
 const app = initializeApp(firebaseConfig);
