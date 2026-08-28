@@ -167,7 +167,7 @@ async function salvarAgenda(status) {
 }
 
 window.copiarRascunhosSelecionados = () => {
-    const selecionados = Array.from(document.querySelectorAll('.check-copy-rascunho:checked'));
+    const selecionados = Array.from(document.querySelectorAll('#corpoRascunhos .check-copy-rascunho:checked'));
     if (selecionados.length === 0) return alert("Selecione os rascunhos!");
 
     let html = `
@@ -193,10 +193,21 @@ window.copiarRascunhosSelecionados = () => {
 
     selecionados.forEach(cb => {
         const tr = cb.closest('tr');
-        const senha = tr.cells[1].innerText;
-        const data = tr.cells[2].innerText;
-        const central = tr.cells[3].innerText;
-        const cargas = tr.cells[4].innerText;
+        const senha = tr.cells[1].innerText.trim();
+        
+        // Pega o valor da data diretamente do input type="date"
+        const inputData = tr.cells[2].querySelector('input[type="date"]');
+        let dataFormatada = "";
+        
+        if (inputData && inputData.value) {
+            // Formata YYYY-MM-DD para DD/MM/YYYY
+            dataFormatada = inputData.value.split('-').reverse().join('/');
+        } else {
+            dataFormatada = tr.cells[2].innerText.trim();
+        }
+
+        const central = tr.cells[3].innerText.trim();
+        const cargas = tr.cells[4].innerText.trim();
 
         html += `
             <tr>
@@ -204,7 +215,7 @@ window.copiarRascunhosSelecionados = () => {
                     ${senha}
                 </td>
                 <td style="border: 1px solid #000000; padding: 6px 12px; text-align: center;">
-                    ${data}
+                    ${dataFormatada}
                 </td>
                 <td style="border: 1px solid #000000; padding: 6px 12px; text-align: center; text-transform: uppercase;">
                     ${central}
