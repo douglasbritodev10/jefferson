@@ -718,41 +718,43 @@
         </div>
     </div>
 
-    <!-- Modal Dinâmico para Filtro Múltiplo de Colunas -->
-    <div id="modalFiltroColuna" class="modal">
-        <div class="modal-content">
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fundo); padding-bottom: 10px; margin-bottom: 15px;">
-                <h3 id="tituloModalFiltro" style="color: var(--vermelho); margin: 0;">Filtrar Opções</h3>
-                <button onclick="fecharModais()"
-                    style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666;"><i
-                        class="fas fa-times"></i></button>
-            </div>
+    <!-- MODAL DE FILTRO DE COLUNA COM OPÇÕES DE ORDENAÇÃO A-Z / Z-A -->
+<div id="modalFiltroColuna" class="modal">
+    <div class="modal-content" style="max-width: 450px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--vermelho); padding-bottom:10px; margin-bottom:15px;">
+            <h3 id="tituloModalFiltro" style="color:var(--vermelho); font-size:1rem; text-transform:uppercase;">Filtrar</h3>
+            <span onclick="fecharModais()" style="cursor:pointer; font-size:1.5rem; font-weight:bold;">&times;</span>
+        </div>
 
-            <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                Período selecionado: <b id="lblDataIni"></b> até <b id="lblDataFim"></b>
-            </p>
+        <div style="margin-bottom: 10px; font-size: 0.8rem; color: #666;">
+            Período: <b id="lblDataIni"></b> até <b id="lblDataFim"></b>
+        </div>
 
-            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
-                <input type="checkbox" id="chkMarcarTodosFiltro" onchange="toggleSelecionarTodasOpcoesFiltro(this)"
-                    style="width: 16px; height: 16px; cursor: pointer;">
-                <label for="chkMarcarTodosFiltro" style="cursor: pointer; font-weight: bold;">Selecionar / Desmarcar
-                    Todos</label>
-            </div>
+        <!-- Botões para Ordenação de A-Z / Z-A -->
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <button onclick="ordenarOpcoesFiltroModal('ASC')" type="button" style="flex: 1; padding: 6px; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                <i class="fas fa-sort-alpha-down"></i> A a Z
+            </button>
+            <button onclick="ordenarOpcoesFiltroModal('DESC')" type="button" style="flex: 1; padding: 6px; border: 1px solid #ccc; background: #f8f9fa; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+                <i class="fas fa-sort-alpha-up-alt"></i> Z a A
+            </button>
+        </div>
 
-            <ul id="listaOpcoesFiltro"
-                style="list-style: none; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
-                <!-- Opções injetadas dinamicamente via JS com checkboxes -->
-            </ul>
+        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="chkTodosFiltroModal" onchange="toggleSelecionarTodasOpcoesFiltro(this)" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="chkTodosFiltroModal" style="font-weight: bold; font-size: 0.85rem; cursor: pointer;">Selecionar Todos</label>
+        </div>
 
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="limparFiltroColuna()" class="btn-main"
-                    style="background: #757575; color: white; width: auto; padding: 10px 15px;">LIMPAR FILTRO</button>
-                <button onclick="confirmarFiltroColuna()" class="btn-main btn-save"
-                    style="width: auto; padding: 10px 20px;">APLICAR FILTRO</button>
-            </div>
+        <ul id="listaOpcoesFiltro" style="list-style: none; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 15px;">
+            <!-- Opções inseridas dinamicamente -->
+        </ul>
+
+        <div style="display: flex; justify-content: space-between; gap: 10px;">
+            <button onclick="limparFiltroColuna()" style="padding: 8px 15px; background: #757575; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Limpar</button>
+            <button onclick="confirmarFiltroColuna()" style="padding: 8px 20px; background: var(--vermelho); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">Aplicar Filtro</button>
         </div>
     </div>
+</div>
 
     <script type="module" src="js/agendamento.js"></script>
 </body>

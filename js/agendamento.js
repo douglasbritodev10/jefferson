@@ -549,7 +549,7 @@ window.exportarExcel = async (modo) => {
     a.click();
 };
 
-// --- CARREGAR DADOS DA TABELA COM FORMATAÇÃO DE TEXTO/CORES ---
+// --- FILTRO E BUSCA GLOBAL EXPANDIDA (INCLUINDO COMPOSIÇÃO) ---
 function carregarDados() {
     onSnapshot(query(collection(db, "agendamentos"), orderBy("timestamp", "desc")), (snap) => {
         const emEdicao = document.getElementById('btnAtualizar').style.display === 'inline-block';
@@ -561,7 +561,7 @@ function carregarDados() {
         const rascunhos = document.getElementById('corpoRascunhos');
         const dIni = document.getElementById('buscaInicio').value;
         const dFim = document.getElementById('buscaFim').value;
-        const termo = document.getElementById('buscaGeral').value.toLowerCase();
+        const termo = document.getElementById('buscaGeral').value.toLowerCase().trim();
 
         corpo.innerHTML = "";
         rascunhos.innerHTML = "";
@@ -578,7 +578,7 @@ function carregarDados() {
             const tipoTratado = limparEspacos(ag.tipoProduto).toUpperCase();
             const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
 
-            // Verificação de Filtros Ativos
+            // Verificação de Filtros Ativos das Colunas
             let passaFiltroColuna = true;
             for (const key in filtrosColunas) {
                 if (filtrosColunas[key].length > 0) {
@@ -590,13 +590,26 @@ function carregarDados() {
                 }
             }
 
-            const atendeBusca = passaFiltroColuna && (
-                (ag.senhaAgendamento ? String(ag.senhaAgendamento).toLowerCase().includes(termo) : false) ||
-                (ag.central ? String(ag.central).toLowerCase().includes(termo) : false) ||
-                (ag.fornecedor ? String(ag.fornecedor).toLowerCase().includes(termo) : false) ||
-                (ag.linhaSeparacao && String(ag.linhaSeparacao).toLowerCase().includes(termo)) ||
-                (ag.pedido && String(ag.pedido).toLowerCase().includes(termo))
+            // Pesquisa ampla na Composição (Código e Descrição)
+            const atendeComposicao = (ag.composicao || []).some(item => 
+                (item.codigo && String(item.codigo).toLowerCase().includes(termo)) ||
+                (item.descricao && String(item.descricao).toLowerCase().includes(termo))
             );
+
+            // Pesquisa Global Expandida por todas as colunas
+            const atendeBuscaGeral = termo === "" || (
+                (ag.senhaAgendamento && String(ag.senhaAgendamento).toLowerCase().includes(termo)) ||
+                (ag.data && dataFormat.toLowerCase().includes(termo)) ||
+                (ag.central && String(ag.central).toLowerCase().includes(termo)) ||
+                (ag.cargas && String(ag.cargas).toLowerCase().includes(termo)) ||
+                (ag.pedido && String(ag.pedido).toLowerCase().includes(termo)) ||
+                (ag.fornecedor && String(ag.fornecedor).toLowerCase().includes(termo)) ||
+                (ag.tipoProduto && String(ag.tipoProduto).toLowerCase().includes(termo)) ||
+                (ag.linhaSeparacao && String(ag.linhaSeparacao).toLowerCase().includes(termo)) ||
+                atendeComposicao
+            );
+
+            const atendeBusca = passaFiltroColuna && atendeBuscaGeral;
 
             const badgeTipo = `<span style="background-color: ${cores.bg}; color: ${cores.text}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">${ag.tipoProduto}</span>`;
 
@@ -606,7 +619,6 @@ function carregarDados() {
             `;
 
             const gerarLinha = (classeCheck) => {
-                // Se for Rascunho, exibe o mini-calendário na coluna de Data
                 const celulaData = ag.status === "Rascunho"
                     ? `<input type="date" value="${ag.data}" onchange="alterarDataRascunho('${ag.senhaAgendamento}', this.value)" style="border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-weight: bold; cursor: pointer;">`
                     : `<span style="color: #212121;">${dataFormat}</span>`;
@@ -1487,9 +1499,12 @@ function atualizarIconesFiltro() {
 
 let campoFiltroAtual = null;
 
-// --- MODAL DE FILTRO INTELIGENTE (EFEITO CASCATA) ---
+// --- MODAL DE FILTRO INTELIGENTE COM OPÇÕES DE ORDENAÇÃO A-Z / Z-A ---
+let ordemFiltroModal = 'ASC'; // Variável global para controle da ordenação das opções
+
 window.abrirModalFiltroColuna = async (campo) => {
     campoFiltroAtual = campo;
+    ordemFiltroModal = 'ASC'; // Define por padrão A-Z ao abrir
     const dIni = document.getElementById('buscaInicio').value;
     const dFim = document.getElementById('buscaFim').value;
 
@@ -1509,6 +1524,14 @@ window.abrirModalFiltroColuna = async (campo) => {
 
     document.getElementById('tituloModalFiltro').innerText = titulos[campo] || "Filtrar Opções";
 
+    await renderizarOpcoesModalFiltro();
+    document.getElementById('modalFiltroColuna').style.display = 'block';
+};
+
+// Renderiza as opções do modal aplicando a ordem definida (A-Z ou Z-A)
+async function renderizarOpcoesModalFiltro() {
+    const dIni = document.getElementById('buscaInicio').value;
+    const dFim = document.getElementById('buscaFim').value;
     const snap = await getDocs(collection(db, "agendamentos"));
     const opcoesUnicas = new Set();
 
@@ -1516,10 +1539,9 @@ window.abrirModalFiltroColuna = async (campo) => {
         const d = docSnap.data();
         if (d.data >= dIni && d.data <= dFim && d.status !== "Rascunho") {
 
-            // Avalia se o registro passa por TODOS OS OUTROS FILTROS (Efeito Cascata)
             let passaOutrosFiltros = true;
             for (const key in filtrosColunas) {
-                if (key !== campo && filtrosColunas[key].length > 0) {
+                if (key !== campoFiltroAtual && filtrosColunas[key].length > 0) {
                     const valReg = limparEspacos(d[key]).toUpperCase();
                     if (!filtrosColunas[key].includes(valReg)) {
                         passaOutrosFiltros = false;
@@ -1528,8 +1550,8 @@ window.abrirModalFiltroColuna = async (campo) => {
                 }
             }
 
-            if (passaOutrosFiltros && d[campo]) {
-                opcoesUnicas.add(limparEspacos(d[campo]).toUpperCase());
+            if (passaOutrosFiltros && d[campoFiltroAtual]) {
+                opcoesUnicas.add(limparEspacos(d[campoFiltroAtual]).toUpperCase());
             }
         }
     });
@@ -1540,9 +1562,17 @@ window.abrirModalFiltroColuna = async (campo) => {
     if (opcoesUnicas.size === 0) {
         lista.innerHTML = "<li style='padding:10px; color:#999;'>Nenhuma opção encontrada neste período/combinação.</li>";
     } else {
-        const valoresJaSelecionados = filtrosColunas[campo] || [];
+        const valoresJaSelecionados = filtrosColunas[campoFiltroAtual] || [];
+        let opcoesArray = Array.from(opcoesUnicas);
 
-        Array.from(opcoesUnicas).sort().forEach(opcao => {
+        // Aplica Ordenação
+        opcoesArray.sort((a, b) => {
+            return ordemFiltroModal === 'ASC' 
+                ? a.localeCompare(b, 'pt-BR') 
+                : b.localeCompare(a, 'pt-BR');
+        });
+
+        opcoesArray.forEach(opcao => {
             const checked = valoresJaSelecionados.includes(opcao) ? 'checked' : '';
             lista.innerHTML += `
                 <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #212121;">
@@ -1551,8 +1581,12 @@ window.abrirModalFiltroColuna = async (campo) => {
                 </li>`;
         });
     }
+}
 
-    document.getElementById('modalFiltroColuna').style.display = 'block';
+// Função para alternar ordenação no Modal do Filtro
+window.ordenarOpcoesFiltroModal = (direcao) => {
+    ordemFiltroModal = direcao;
+    renderizarOpcoesModalFiltro();
 };
 
 window.toggleSelecionarTodasOpcoesFiltro = (e) => {
