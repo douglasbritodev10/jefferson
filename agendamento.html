@@ -573,20 +573,82 @@
                             <tr>
                                 <th style="width: 40px;"><input type="checkbox" id="selectAll"
                                         onclick="toggleSelectAll(this)"></th>
-                                <th onclick="ordenarTabelaDefinitiva(0)">SENHA <i class="fas fa-sort"></i></th>
-                                <th onclick="ordenarTabelaDefinitiva(1)">DATA <i class="fas fa-sort"></i></th>
-                                <th onclick="abrirModalFiltroColuna('central')">CENTRAL <i class="fas fa-filter"
-                                        id="icon-filtro-central" style="font-size:0.7rem; margin-left:3px;"></i></th>
-                                <th onclick="ordenarTabelaDefinitiva(3)">CARGAS <i class="fas fa-sort"></i></th>
-                                <th onclick="ordenarTabelaDefinitiva(4)">PEDIDO <i class="fas fa-sort"></i></th>
-                                <th onclick="abrirModalFiltroColuna('fornecedor')">FORNECEDOR <i class="fas fa-filter"
-                                        id="icon-filtro-fornecedor" style="font-size:0.7rem; margin-left:3px;"></i></th>
-                                <th onclick="abrirModalFiltroColuna('tipoProduto')">TIPO <i class="fas fa-filter"
-                                        id="icon-filtro-tipoProduto" style="font-size:0.7rem; margin-left:3px;"></i>
+
+                                <!-- SENHA -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('senhaAgendamento')"
+                                        style="cursor:pointer;">SENHA <i class="fas fa-sort"
+                                            id="sort-def-senhaAgendamento"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-senhaAgendamento"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('senhaAgendamento')"></i>
                                 </th>
-                                <th onclick="abrirModalFiltroColuna('linhaSeparacao')">LINHA <i class="fas fa-filter"
-                                        id="icon-filtro-linhaSeparacao" style="font-size:0.7rem; margin-left:3px;"></i>
+
+                                <!-- DATA -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('data')" style="cursor:pointer;">DATA <i
+                                            class="fas fa-sort" id="sort-def-data"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-data"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('data')"></i>
                                 </th>
+
+                                <!-- CENTRAL -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('central')" style="cursor:pointer;">CENTRAL
+                                        <i class="fas fa-sort" id="sort-def-central"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-central"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('central')"></i>
+                                </th>
+
+                                <!-- CARGAS -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('cargas')" style="cursor:pointer;">CARGAS <i
+                                            class="fas fa-sort" id="sort-def-cargas"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-cargas"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('cargas')"></i>
+                                </th>
+
+                                <!-- PEDIDO -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('pedido')" style="cursor:pointer;">PEDIDO <i
+                                            class="fas fa-sort" id="sort-def-pedido"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-pedido"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('pedido')"></i>
+                                </th>
+
+                                <!-- FORNECEDOR -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('fornecedor')"
+                                        style="cursor:pointer;">FORNECEDOR <i class="fas fa-sort"
+                                            id="sort-def-fornecedor"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-fornecedor"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('fornecedor')"></i>
+                                </th>
+
+                                <!-- TIPO -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('tipoProduto')" style="cursor:pointer;">TIPO
+                                        <i class="fas fa-sort" id="sort-def-tipoProduto"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-tipoProduto"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('tipoProduto')"></i>
+                                </th>
+
+                                <!-- LINHA -->
+                                <th>
+                                    <span onclick="ordenarTabelaDefinitiva('linhaSeparacao')"
+                                        style="cursor:pointer;">LINHA <i class="fas fa-sort"
+                                            id="sort-def-linhaSeparacao"></i></span>
+                                    <i class="fas fa-filter" id="icon-filtro-linhaSeparacao"
+                                        style="font-size:0.7rem; margin-left:3px; cursor:pointer;"
+                                        onclick="abrirModalFiltroColuna('linhaSeparacao')"></i>
+                                </th>
+
                                 <th>AÇÕES</th>
                             </tr>
                         </thead>

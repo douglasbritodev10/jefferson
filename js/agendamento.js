@@ -549,7 +549,7 @@ window.exportarExcel = async (modo) => {
     a.click();
 };
 
-// --- CARREGAR DADOS DA TABELA COM FORMATAÇÃO DE TEXTO/CORES ---
+// --- CARREGAR DADOS DA TABELA COM BUSCA EM TODAS AS COLUNAS E COMPOSIÇÃO ---
 function carregarDados() {
     onSnapshot(query(collection(db, "agendamentos"), orderBy("timestamp", "desc")), (snap) => {
         const emEdicao = document.getElementById('btnAtualizar').style.display === 'inline-block';
@@ -561,24 +561,56 @@ function carregarDados() {
         const rascunhos = document.getElementById('corpoRascunhos');
         const dIni = document.getElementById('buscaInicio').value;
         const dFim = document.getElementById('buscaFim').value;
-        const termo = document.getElementById('buscaGeral').value.toLowerCase();
+        const termo = document.getElementById('buscaGeral').value.toLowerCase().trim();
 
         corpo.innerHTML = "";
         rascunhos.innerHTML = "";
         let totalCargas = 0;
 
+        let listaAgendamentos = [];
+
         snap.forEach(d => {
-            const ag = d.data();
+            listaAgendamentos.push(d.data());
+        });
+
+        // Aplicação da Ordenação Global antes da renderização
+        if (ordenacaoAtual.campo) {
+            const k = ordenacaoAtual.campo;
+            const dir = ordenacaoAtual.direcao === 'asc' ? 1 : -1;
+
+            listaAgendamentos.sort((a, b) => {
+                let valA = limparEspacos(a[k]).toUpperCase();
+                let valB = limparEspacos(b[k]).toUpperCase();
+
+                if (k === 'data') {
+                    valA = valA.replace(/-/g, '');
+                    valB = valB.replace(/-/g, '');
+                }
+
+                const numA = parseFloat(valA);
+                const numB = parseFloat(valB);
+
+                if (!isNaN(numA) && !isNaN(numB) && k !== 'data') {
+                    return (numA - numB) * dir;
+                }
+
+                return valA.localeCompare(valB, 'pt-BR') * dir;
+            });
+        }
+
+        listaAgendamentos.forEach(ag => {
             const cores = getCoresPorTipo(ag.tipoProduto);
             const dataFormat = ag.data ? ag.data.split('-').reverse().join('/') : '-';
 
-            // Tratamento de ponta para busca e filtro
             const centralTratada = limparEspacos(ag.central).toUpperCase();
             const fornecedorTratado = limparEspacos(ag.fornecedor).toUpperCase();
             const tipoTratado = limparEspacos(ag.tipoProduto).toUpperCase();
             const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
+            const senhaTratada = limparEspacos(ag.senhaAgendamento).toUpperCase();
+            const cargasTratada = limparEspacos(ag.cargas).toUpperCase();
+            const pedidoTratado = limparEspacos(ag.pedido).toUpperCase();
 
-            // Verificação de Filtros Ativos
+            // 1. Verificação de Filtros Ativos por Coluna (Efeito Cascata)
             let passaFiltroColuna = true;
             for (const key in filtrosColunas) {
                 if (filtrosColunas[key].length > 0) {
@@ -590,13 +622,38 @@ function carregarDados() {
                 }
             }
 
-            const atendeBusca = passaFiltroColuna && (
-                (ag.senhaAgendamento ? String(ag.senhaAgendamento).toLowerCase().includes(termo) : false) ||
-                (ag.central ? String(ag.central).toLowerCase().includes(termo) : false) ||
-                (ag.fornecedor ? String(ag.fornecedor).toLowerCase().includes(termo) : false) ||
-                (ag.linhaSeparacao && String(ag.linhaSeparacao).toLowerCase().includes(termo)) ||
-                (ag.pedido && String(ag.pedido).toLowerCase().includes(termo))
-            );
+            // 2. Busca Geral em TODAS as Colunas + COMPOSIÇÃO DE ITENS
+            let atendeBuscaGeral = false;
+
+            if (!termo) {
+                atendeBuscaGeral = true;
+            } else {
+                // Checa colunas padrão da tabela
+                const buscaNasColunas = 
+                    senhaTratada.toLowerCase().includes(termo) ||
+                    dataFormat.toLowerCase().includes(termo) ||
+                    ag.data.toLowerCase().includes(termo) ||
+                    centralTratada.toLowerCase().includes(termo) ||
+                    cargasTratada.toLowerCase().includes(termo) ||
+                    pedidoTratado.toLowerCase().includes(termo) ||
+                    fornecedorTratado.toLowerCase().includes(termo) ||
+                    tipoTratado.toLowerCase().includes(termo) ||
+                    linhaTratada.toLowerCase().includes(termo);
+
+                // Checa itens da composição
+                let buscaNaComposicao = false;
+                if (ag.composicao && Array.isArray(ag.composicao)) {
+                    buscaNaComposicao = ag.composicao.some(item => 
+                        String(item.codigo || "").toLowerCase().includes(termo) ||
+                        String(item.descricao || "").toLowerCase().includes(termo) ||
+                        String(item.qtd || "").toLowerCase().includes(termo)
+                    );
+                }
+
+                atendeBuscaGeral = buscaNasColunas || buscaNaComposicao;
+            }
+
+            const passaValidaçãoTotal = passaFiltroColuna && atendeBuscaGeral;
 
             const badgeTipo = `<span style="background-color: ${cores.bg}; color: ${cores.text}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">${ag.tipoProduto}</span>`;
 
@@ -606,33 +663,32 @@ function carregarDados() {
             `;
 
             const gerarLinha = (classeCheck) => {
-                // Se for Rascunho, exibe o mini-calendário na coluna de Data
                 const celulaData = ag.status === "Rascunho"
                     ? `<input type="date" value="${ag.data}" onchange="alterarDataRascunho('${ag.senhaAgendamento}', this.value)" style="border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-weight: bold; cursor: pointer;">`
                     : `<span style="color: #212121;">${dataFormat}</span>`;
 
                 return `
-        <tr style="color: #212121;">
-            <td><input type="checkbox" class="${classeCheck}" value="${ag.senhaAgendamento}"></td>
-            <td><b style="color: #D32F2F;">${ag.senhaAgendamento}</b></td>
-            <td>${celulaData}</td>
-            <td style="font-weight:bold; color: #212121;">${centralTratada}</td>
-            <td style="color: #212121;">${ag.cargas || '-'}</td>
-            <td style="color: #212121;">${ag.pedido || '-'}</td>
-            <td style="font-weight:bold; color: #212121;">${fornecedorTratado}</td>
-            <td>${badgeTipo}</td>
-            <td style="font-weight: bold; color: #212121;">${linhaTratada || '-'}</td>
-            <td>
-                ${ag.status === "Rascunho" ? `<button onclick="finalizarDireto('${ag.senhaAgendamento}')" title="Finalizar" style="color:green; border:none; background:none; cursor:pointer; margin-right:8px;"><i class="fas fa-check-circle"></i></button>` : ''}
-                ${btnAcoes}
-            </td>
-        </tr>`;
+                <tr style="color: #212121;">
+                    <td><input type="checkbox" class="${classeCheck}" value="${ag.senhaAgendamento}"></td>
+                    <td><b style="color: #D32F2F;">${ag.senhaAgendamento}</b></td>
+                    <td>${celulaData}</td>
+                    <td style="font-weight:bold; color: #212121;">${centralTratada}</td>
+                    <td style="color: #212121;">${ag.cargas || '-'}</td>
+                    <td style="color: #212121;">${ag.pedido || '-'}</td>
+                    <td style="font-weight:bold; color: #212121;">${fornecedorTratado}</td>
+                    <td>${badgeTipo}</td>
+                    <td style="font-weight: bold; color: #212121;">${linhaTratada || '-'}</td>
+                    <td>
+                        ${ag.status === "Rascunho" ? `<button onclick="finalizarDireto('${ag.senhaAgendamento}')" title="Finalizar" style="color:green; border:none; background:none; cursor:pointer; margin-right:8px;"><i class="fas fa-check-circle"></i></button>` : ''}
+                        ${btnAcoes}
+                    </td>
+                </tr>`;
             };
 
             if (ag.status === "Rascunho") {
-                if (atendeBusca) rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
+                if (passaValidaçãoTotal) rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
             } else {
-                if (ag.data >= dIni && ag.data <= dFim && atendeBusca) {
+                if (ag.data >= dIni && ag.data <= dFim && passaValidaçãoTotal) {
                     corpo.innerHTML += gerarLinha("check-export");
                     totalCargas++;
                 }
@@ -642,7 +698,7 @@ function carregarDados() {
         const spanTotal = document.getElementById('totalCargasAgendadas');
         if (spanTotal) spanTotal.innerText = totalCargas;
 
-        atualizarIconesFiltro();
+        atualizarIconesFiltroEOrdenacao();
     });
 }
 
@@ -904,10 +960,15 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 // --- FUNÇÕES DE ORDENAÇÃO DE TABELAS ---
 
-// Função para a tabela Definitiva
-window.ordenarTabelaDefinitiva = (indiceColuna) => {
-    // Somamos +1 porque a primeira coluna (index 0) é o checkbox
-    ordenarLogicaDOM('corpoTabela', indiceColuna + 1);
+// --- FUNÇÃO PARA ALTERNAR ORDENAÇÃO (A-Z / Z-A) ---
+window.ordenarTabelaDefinitiva = (campo) => {
+    if (ordenacaoAtual.campo === campo) {
+        ordenacaoAtual.direcao = ordenacaoAtual.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+        ordenacaoAtual.campo = campo;
+        ordenacaoAtual.direcao = 'asc';
+    }
+    carregarDados();
 };
 
 // Função para a tabela Rascunho
@@ -1457,29 +1518,54 @@ window.excluirRascunhosSelecionados = async () => {
     }
 };
 
-// --- ESTRUTURA DE FILTROS MÚLTIPLOS (EFEITO CASCATA) ---
+// --- ESTRUTURA DE FILTROS MÚLTIPLOS (EFEITO CASCATA) PARA TODAS AS COLUNAS ---
 let filtrosColunas = {
+    senhaAgendamento: [],
+    data: [],
     central: [],
+    cargas: [],
+    pedido: [],
     fornecedor: [],
     tipoProduto: [],
     linhaSeparacao: []
 };
 
+// Guarda o estado global da ordenação { campo: 'senhaAgendamento', direcao: 'asc'|'desc' }
+let ordenacaoAtual = {
+    campo: null,
+    direcao: 'asc'
+};
+
 // --- LIMPEZA DE ESPAÇOS EM BRANCO NAS STRINGS ---
 const limparEspacos = (valor) => String(valor || "").trim().replace(/\s+/g, " ");
 
-// --- ATUALIZAÇÃO DOS ÍCONES DE FILTRO E DADOS DAS TABELAS ---
-function atualizarIconesFiltro() {
-    const campos = ['central', 'fornecedor', 'tipoProduto', 'linhaSeparacao'];
-    campos.forEach(campo => {
+// --- ATUALIZAÇÃO DOS ÍCONES DE FILTRO E SETAS DE ORDENAÇÃO ---
+function atualizarIconesFiltroEOrdenacao() {
+    // 1. Atualiza Ícones de Filtro
+    for (const campo in filtrosColunas) {
         const icone = document.getElementById(`icon-filtro-${campo}`);
         if (icone) {
             if (filtrosColunas[campo] && filtrosColunas[campo].length > 0) {
                 icone.style.color = '#D32F2F'; // Vermelho quando ativo
                 icone.classList.add('filtro-ativo');
             } else {
-                icone.style.color = 'inherit'; // Cor padrão
+                icone.style.color = 'inherit';
                 icone.classList.remove('filtro-ativo');
+            }
+        }
+    }
+
+    // 2. Atualiza Setas de Ordenação (Comunicação visual entre colunas)
+    const todosCampos = ['senhaAgendamento', 'data', 'central', 'cargas', 'pedido', 'fornecedor', 'tipoProduto', 'linhaSeparacao'];
+    todosCampos.forEach(campo => {
+        const setaDef = document.getElementById(`sort-def-${campo}`);
+        if (setaDef) {
+            if (ordenacaoAtual.campo === campo) {
+                setaDef.className = ordenacaoAtual.direcao === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+                setaDef.style.color = '#D32F2F';
+            } else {
+                setaDef.className = 'fas fa-sort';
+                setaDef.style.color = 'inherit';
             }
         }
     });
@@ -1487,7 +1573,7 @@ function atualizarIconesFiltro() {
 
 let campoFiltroAtual = null;
 
-// --- MODAL DE FILTRO INTELIGENTE (EFEITO CASCATA) ---
+// --- MODAL DE FILTRO INTELIGENTE PARA TODAS AS COLUNAS ---
 window.abrirModalFiltroColuna = async (campo) => {
     campoFiltroAtual = campo;
     const dIni = document.getElementById('buscaInicio').value;
@@ -1501,7 +1587,11 @@ window.abrirModalFiltroColuna = async (campo) => {
     }
 
     const titulos = {
+        senhaAgendamento: "Filtrar por Senha",
+        data: "Filtrar por Data",
         central: "Filtrar por Central",
+        cargas: "Filtrar por Cargas",
+        pedido: "Filtrar por Pedido",
         fornecedor: "Filtrar por Fornecedor",
         tipoProduto: "Filtrar por Tipo de Produto",
         linhaSeparacao: "Filtrar por Linha de Separação"
@@ -1529,7 +1619,11 @@ window.abrirModalFiltroColuna = async (campo) => {
             }
 
             if (passaOutrosFiltros && d[campo]) {
-                opcoesUnicas.add(limparEspacos(d[campo]).toUpperCase());
+                let valor = limparEspacos(d[campo]).toUpperCase();
+                if (campo === 'data') {
+                    valor = valor.split('-').reverse().join('/');
+                }
+                opcoesUnicas.add(valor);
             }
         }
     });
@@ -1538,7 +1632,7 @@ window.abrirModalFiltroColuna = async (campo) => {
     lista.innerHTML = "";
 
     if (opcoesUnicas.size === 0) {
-        lista.innerHTML = "<li style='padding:10px; color:#999;'>Nenhuma opção encontrada neste período/combinação.</li>";
+        lista.innerHTML = "<li style='padding:10px; color:#999;'>Nenhuma opção encontrada neste período.</li>";
     } else {
         const valoresJaSelecionados = filtrosColunas[campo] || [];
 
