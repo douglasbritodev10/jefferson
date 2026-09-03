@@ -1,18 +1,21 @@
-import { db } from './firebase-config.js'; // Ajuste o caminho das suas configurações Firebase se necessário
-import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { app } from './firebase-config.js';
+import { 
+    getFirestore, collection, getDocs 
+} from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-// Instâncias Globais dos Gráficos (para destruição e recriação)
+// Inicializa a instância do banco a partir do app importado
+const db = getFirestore(app);
+
+// Instâncias Globais dos Gráficos
 let chartEvolucaoInstance = null;
 let chartFornecedoresInstance = null;
 let chartCentraisInstance = null;
 
-// Todos os dados em memória para filtros rápidos
+// Armazenamento em memória
 let todosAgendamentos = [];
 
-// Funções Auxiliares de Tratamento
 const limparEspacos = (valor) => String(valor || "").trim().replace(/\s+/g, " ");
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
     configurarDatasPadrao();
     await carregarDadosFirebase();
@@ -20,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     executarAnaliseDashboard();
 });
 
-// Define período inicial padrão (últimos 30 dias)
 function configurarDatasPadrao() {
     const hoje = new Date();
     const trintaDiasAtras = new Date();
@@ -30,7 +32,6 @@ function configurarDatasPadrao() {
     document.getElementById('dashDataFim').value = hoje.toISOString().split('T')[0];
 }
 
-// Carrega os dados brutos do Firestore
 async function carregarDadosFirebase() {
     try {
         const snap = await getDocs(collection(db, "agendamentos"));
@@ -46,7 +47,6 @@ async function carregarDadosFirebase() {
     }
 }
 
-// Preenche os Selects Multi-opções com dados únicos
 function popularOpcoesFiltro() {
     const centrais = new Set();
     const fornecedores = new Set();
@@ -71,13 +71,11 @@ function preencherSelect(elementId, opcoes) {
     });
 }
 
-// Pega opções selecionadas em select múltiplo (vazio = todas)
 function getValoresSelecionados(elementId) {
     const select = document.getElementById(elementId);
     return Array.from(select.selectedOptions).map(option => option.value);
 }
 
-// LÓGICA PRINCIPAL DE ANÁLISE E CÁLCULO
 window.executarAnaliseDashboard = function() {
     const dIni = document.getElementById('dashDataInicio').value;
     const dFim = document.getElementById('dashDataFim').value;
@@ -87,7 +85,7 @@ window.executarAnaliseDashboard = function() {
     const tiposSel = getValoresSelecionados('dashTipoProduto');
     const agrupamento = document.getElementById('dashAgrupamento').value;
 
-    // 1. Filtrar registros do Período Atual
+    // Período Atual
     const filtrados = todosAgendamentos.filter(ag => {
         const dataOk = ag.data >= dIni && ag.data <= dFim;
         const centralOk = centraisSel.length === 0 || centraisSel.includes(limparEspacos(ag.central).toUpperCase());
@@ -97,7 +95,7 @@ window.executarAnaliseDashboard = function() {
         return dataOk && centralOk && fornOk && tipoOk;
     });
 
-    // 2. Filtrar registros do Período Anterior (Para cálculo de variação % de Aumento/Baixa)
+    // Período Anterior para Variação %
     const diffDias = (new Date(dFim) - new Date(dIni)) / (1000 * 60 * 60 * 24) + 1;
     const dataIniAnt = new Date(dIni);
     dataIniAnt.setDate(dataIniAnt.getDate() - diffDias);
@@ -116,7 +114,7 @@ window.executarAnaliseDashboard = function() {
         return dataOk && centralOk && fornOk && tipoOk;
     });
 
-    // --- CÁLCULO DOS KPIS ---
+    // KPIS
     const totalAtual = filtrados.length;
     const totalAnterior = filtradosAnterior.length;
 
@@ -127,7 +125,6 @@ window.executarAnaliseDashboard = function() {
         varPct = 100;
     }
 
-    // KPI Total
     document.getElementById('kpiTotalAgendamentos').innerText = totalAtual;
     const kpiVarElem = document.getElementById('kpiVarTotal');
     if (varPct >= 0) {
@@ -138,11 +135,10 @@ window.executarAnaliseDashboard = function() {
         kpiVarElem.innerHTML = `<i class="fas fa-arrow-down"></i> ${varPct}% vs período anterior`;
     }
 
-    // Média Diária
     const mediaDiaria = (totalAtual / Math.max(diffDias, 1)).toFixed(1);
     document.getElementById('kpiMediaDiaria').innerText = mediaDiaria;
 
-    // Agrupamento por Fornecedor (Top Fornecedor)
+    // Top Fornecedor
     const mapFornecedores = {};
     filtrados.forEach(ag => {
         const f = limparEspacos(ag.fornecedor).toUpperCase() || "NÃO INFORMADO";
@@ -161,14 +157,12 @@ window.executarAnaliseDashboard = function() {
         document.getElementById('kpiTopFornecedorPct').innerText = "0% do total";
     }
 
-    // --- MONTAGEM DOS GRÁFICOS E TABELA ---
+    // Atualiza Visualizações
     renderizarGraficoEvolucao(filtrados, agrupamento);
     renderizarGraficoFornecedores(fornOrdenados, totalAtual);
     renderizarGraficoCentrais(filtrados);
     renderizarTabelaFornecedores(fornOrdenados, totalAtual);
 };
-
-// --- RENDERIZADORES DE GRÁFICOS (CHART.JS) ---
 
 function renderizarGraficoEvolucao(dados, agrupamento) {
     const mapaTempo = {};
