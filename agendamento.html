@@ -571,54 +571,23 @@
                     <table id="tabelaAgendas">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
-                                <th>Senha</th>
-                                <th>Data</th>
-
-                                <!-- Central -->
-                                <th>
-                                    Central
-                                    <i class="fas fa-sort" id="sort-icon-central" onclick="ordenarTabelaPor('central')"
-                                        title="Ordenar Central A-Z / Z-A"
-                                        style="cursor: pointer; margin-left: 4px; color: #ccc;"></i>
-                                    <i class="fas fa-filter btn-filtro-coluna" id="icon-filter-central"
-                                        onclick="abrirModalFiltroColuna('central')" title="Filtrar Central"></i>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll"
+                                        onclick="toggleSelectAll(this)"></th>
+                                <th onclick="ordenarTabelaDefinitiva(0)">SENHA <i class="fas fa-sort"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(1)">DATA <i class="fas fa-sort"></i></th>
+                                <th onclick="abrirModalFiltroColuna('central')">CENTRAL <i class="fas fa-filter"
+                                        id="icon-filtro-central" style="font-size:0.7rem; margin-left:3px;"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(3)">CARGAS <i class="fas fa-sort"></i></th>
+                                <th onclick="ordenarTabelaDefinitiva(4)">PEDIDO <i class="fas fa-sort"></i></th>
+                                <th onclick="abrirModalFiltroColuna('fornecedor')">FORNECEDOR <i class="fas fa-filter"
+                                        id="icon-filtro-fornecedor" style="font-size:0.7rem; margin-left:3px;"></i></th>
+                                <th onclick="abrirModalFiltroColuna('tipoProduto')">TIPO <i class="fas fa-filter"
+                                        id="icon-filtro-tipoProduto" style="font-size:0.7rem; margin-left:3px;"></i>
                                 </th>
-
-                                <th>Cargas</th>
-                                <th>Pedido</th>
-
-                                <!-- Fornecedor -->
-                                <th>
-                                    Fornecedor
-                                    <i class="fas fa-sort" id="sort-icon-fornecedor"
-                                        onclick="ordenarTabelaPor('fornecedor')" title="Ordenar Fornecedor A-Z / Z-A"
-                                        style="cursor: pointer; margin-left: 4px; color: #ccc;"></i>
-                                    <i class="fas fa-filter btn-filtro-coluna" id="icon-filter-fornecedor"
-                                        onclick="abrirModalFiltroColuna('fornecedor')" title="Filtrar Fornecedor"></i>
+                                <th onclick="abrirModalFiltroColuna('linhaSeparacao')">LINHA <i class="fas fa-filter"
+                                        id="icon-filtro-linhaSeparacao" style="font-size:0.7rem; margin-left:3px;"></i>
                                 </th>
-
-                                <!-- Tipo Produto -->
-                                <th>
-                                    Tipo Produto
-                                    <i class="fas fa-sort" id="sort-icon-tipoProduto"
-                                        onclick="ordenarTabelaPor('tipoProduto')" title="Ordenar Tipo A-Z / Z-A"
-                                        style="cursor: pointer; margin-left: 4px; color: #ccc;"></i>
-                                    <i class="fas fa-filter btn-filtro-coluna" id="icon-filter-tipoProduto"
-                                        onclick="abrirModalFiltroColuna('tipoProduto')" title="Filtrar Tipo"></i>
-                                </th>
-
-                                <!-- Linha Separação -->
-                                <th>
-                                    Linha Separação
-                                    <i class="fas fa-sort" id="sort-icon-linhaSeparacao"
-                                        onclick="ordenarTabelaPor('linhaSeparacao')" title="Ordenar Linha A-Z / Z-A"
-                                        style="cursor: pointer; margin-left: 4px; color: #ccc;"></i>
-                                    <i class="fas fa-filter btn-filtro-coluna" id="icon-filter-linhaSeparacao"
-                                        onclick="abrirModalFiltroColuna('linhaSeparacao')" title="Filtrar Linha"></i>
-                                </th>
-
-                                <th>Ações</th>
+                                <th>AÇÕES</th>
                             </tr>
                         </thead>
                         <tbody id="corpoTabela"></tbody>
@@ -749,24 +718,38 @@
         </div>
     </div>
 
+    <!-- Modal Dinâmico para Filtro Múltiplo de Colunas -->
     <div id="modalFiltroColuna" class="modal">
         <div class="modal-content">
-            <h3 id="tituloModalFiltro">Filtrar Opções</h3>
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--fundo); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 id="tituloModalFiltro" style="color: var(--vermelho); margin: 0;">Filtrar Opções</h3>
+                <button onclick="fecharModais()"
+                    style="background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #666;"><i
+                        class="fas fa-times"></i></button>
+            </div>
 
-            <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
-                <input type="checkbox" id="chkTodosFiltro" onclick="toggleSelecionarTodasOpcoesFiltro(this)"
-                    style="width: 18px; height: 18px; cursor: pointer;">
-                <label for="chkTodosFiltro" style="font-weight: bold; cursor: pointer;">Selecionar Todos</label>
+            <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                Período selecionado: <b id="lblDataIni"></b> até <b id="lblDataFim"></b>
+            </p>
+
+            <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;">
+                <input type="checkbox" id="chkMarcarTodosFiltro" onchange="toggleSelecionarTodasOpcoesFiltro(this)"
+                    style="width: 16px; height: 16px; cursor: pointer;">
+                <label for="chkMarcarTodosFiltro" style="cursor: pointer; font-weight: bold;">Selecionar / Desmarcar
+                    Todos</label>
             </div>
 
             <ul id="listaOpcoesFiltro"
-                style="list-style: none; max-height: 250px; overflow-y: auto; padding: 0; margin-bottom: 15px;"></ul>
+                style="list-style: none; max-height: 250px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px;">
+                <!-- Opções injetadas dinamicamente via JS com checkboxes -->
+            </ul>
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
                 <button onclick="limparFiltroColuna()" class="btn-main"
-                    style="background: #666; color: white; width: auto; padding: 8px 15px;">LIMPAR</button>
+                    style="background: #757575; color: white; width: auto; padding: 10px 15px;">LIMPAR FILTRO</button>
                 <button onclick="confirmarFiltroColuna()" class="btn-main btn-save"
-                    style="width: auto; padding: 8px 15px;">APLICAR</button>
+                    style="width: auto; padding: 10px 20px;">APLICAR FILTRO</button>
             </div>
         </div>
     </div>

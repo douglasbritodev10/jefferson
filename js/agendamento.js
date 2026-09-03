@@ -549,48 +549,7 @@ window.exportarExcel = async (modo) => {
     a.click();
 };
 
-// --- VARIÁVEIS DE CONTROLE DE ORDENAÇÃO AO VIVO ---
-let colunaOrdenacaoAtual = null; // Ex: 'central', 'fornecedor', etc.
-let direcaoOrdenacaoAtual = 'asc'; // 'asc' ou 'desc'
-
-// --- FUNÇÃO PARA MANIPULAR A ORDENAÇÃO DA TABELA ---
-window.ordenarTabelaPor = (campo) => {
-    if (colunaOrdenacaoAtual === campo) {
-        // Inverte a direção se clicar na mesma coluna
-        direcaoOrdenacaoAtual = direcaoOrdenacaoAtual === 'asc' ? 'desc' : 'asc';
-    } else {
-        colunaOrdenacaoAtual = campo;
-        direcaoOrdenacaoAtual = 'asc';
-    }
-
-    // Atualiza visualmente os ícones das setas nos cabeçalhos
-    atualizarSetasOrdenacao();
-
-    // Recarrega e renderiza a tabela com a nova ordenação aplicada
-    carregarDados();
-};
-
-// --- ATUALIZA OS ÍCONES DAS SETAS DE ORDENAÇÃO NO CABEÇALHO ---
-function atualizarSetasOrdenacao() {
-    const colunas = ['central', 'fornecedor', 'tipoProduto', 'linhaSeparacao'];
-    
-    colunas.forEach(col => {
-        const elSeta = document.getElementById(`sort-icon-${col}`);
-        if (!elSeta) return;
-
-        if (colunaOrdenacaoAtual === col) {
-            elSeta.className = direcaoOrdenacaoAtual === 'asc' 
-                ? 'fas fa-sort-alpha-down' 
-                : 'fas fa-sort-alpha-down-alt';
-            elSeta.style.color = '#D32F2F'; // Destaca a coluna ordenada
-        } else {
-            elSeta.className = 'fas fa-sort';
-            elSeta.style.color = '#ccc';
-        }
-    });
-}
-
-// --- CARREGAR DADOS DA TABELA COM ORDENAÇÃO AO VIVO E BUSCA AMPLIADA ---
+// --- CARREGAR DADOS DA TABELA COM FORMATAÇÃO DE TEXTO/CORES ---
 function carregarDados() {
     onSnapshot(query(collection(db, "agendamentos"), orderBy("timestamp", "desc")), (snap) => {
         const emEdicao = document.getElementById('btnAtualizar').style.display === 'inline-block';
@@ -602,23 +561,27 @@ function carregarDados() {
         const rascunhos = document.getElementById('corpoRascunhos');
         const dIni = document.getElementById('buscaInicio').value;
         const dFim = document.getElementById('buscaFim').value;
-        const termo = document.getElementById('buscaGeral').value.toLowerCase().trim();
+        const termo = document.getElementById('buscaGeral').value.toLowerCase();
 
         corpo.innerHTML = "";
         rascunhos.innerHTML = "";
         let totalCargas = 0;
 
-        // Armazena os agendamentos filtrados para poder ordenar ao vivo antes de desenhar na tela
-        let listaAgendamentos = [];
-
         snap.forEach(d => {
             const ag = d.data();
+            const cores = getCoresPorTipo(ag.tipoProduto);
             const dataFormat = ag.data ? ag.data.split('-').reverse().join('/') : '-';
 
-            // Verificação de Filtros Ativos de Coluna
+            // Tratamento de ponta para busca e filtro
+            const centralTratada = limparEspacos(ag.central).toUpperCase();
+            const fornecedorTratado = limparEspacos(ag.fornecedor).toUpperCase();
+            const tipoTratado = limparEspacos(ag.tipoProduto).toUpperCase();
+            const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
+
+            // Verificação de Filtros Ativos
             let passaFiltroColuna = true;
             for (const key in filtrosColunas) {
-                if (filtrosColunas[key] && filtrosColunas[key].length > 0) {
+                if (filtrosColunas[key].length > 0) {
                     const valRegistro = limparEspacos(ag[key]).toUpperCase();
                     if (!filtrosColunas[key].includes(valRegistro)) {
                         passaFiltroColuna = false;
@@ -627,52 +590,13 @@ function carregarDados() {
                 }
             }
 
-            // Busca na Composição (Código ou Descrição)
-            const atendeComposicao = ag.composicao && Array.isArray(ag.composicao) && ag.composicao.some(item => 
-                (item.codigo && String(item.codigo).toLowerCase().includes(termo)) ||
-                (item.descricao && String(item.descricao).toLowerCase().includes(termo))
-            );
-
-            // Busca Global Expandida
             const atendeBusca = passaFiltroColuna && (
-                termo === "" ||
-                (ag.senhaAgendamento && String(ag.senhaAgendamento).toLowerCase().includes(termo)) ||
-                (ag.data && (ag.data.toLowerCase().includes(termo) || dataFormat.includes(termo))) ||
-                (ag.central && String(ag.central).toLowerCase().includes(termo)) ||
-                (ag.cargas && String(ag.cargas).toLowerCase().includes(termo)) ||
-                (ag.pedido && String(ag.pedido).toLowerCase().includes(termo)) ||
-                (ag.fornecedor && String(ag.fornecedor).toLowerCase().includes(termo)) ||
-                (ag.tipoProduto && String(ag.tipoProduto).toLowerCase().includes(termo)) ||
+                (ag.senhaAgendamento ? String(ag.senhaAgendamento).toLowerCase().includes(termo) : false) ||
+                (ag.central ? String(ag.central).toLowerCase().includes(termo) : false) ||
+                (ag.fornecedor ? String(ag.fornecedor).toLowerCase().includes(termo) : false) ||
                 (ag.linhaSeparacao && String(ag.linhaSeparacao).toLowerCase().includes(termo)) ||
-                atendeComposicao
+                (ag.pedido && String(ag.pedido).toLowerCase().includes(termo))
             );
-
-            if (atendeBusca) {
-                listaAgendamentos.push(ag);
-            }
-        });
-
-        // --- APLICAÇÃO DA ORDENAÇÃO AO VIVO SE HOUVER COLUNA SELECIONADA ---
-        if (colunaOrdenacaoAtual) {
-            listaAgendamentos.sort((a, b) => {
-                const valA = limparEspacos(a[colunaOrdenacaoAtual] || '').toUpperCase();
-                const valB = limparEspacos(b[colunaOrdenacaoAtual] || '').toUpperCase();
-
-                if (direcaoOrdenacaoAtual === 'asc') {
-                    return valA.localeCompare(valB, 'pt-BR');
-                } else {
-                    return valB.localeCompare(valA, 'pt-BR');
-                }
-            });
-        }
-
-        // --- MONTAGEM DA TABELA APÓS A ORDENAÇÃO ---
-        listaAgendamentos.forEach(ag => {
-            const cores = getCoresPorTipo(ag.tipoProduto);
-            const dataFormat = ag.data ? ag.data.split('-').reverse().join('/') : '-';
-            const centralTratada = limparEspacos(ag.central).toUpperCase();
-            const fornecedorTratado = limparEspacos(ag.fornecedor).toUpperCase();
-            const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
 
             const badgeTipo = `<span style="background-color: ${cores.bg}; color: ${cores.text}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">${ag.tipoProduto}</span>`;
 
@@ -682,6 +606,7 @@ function carregarDados() {
             `;
 
             const gerarLinha = (classeCheck) => {
+                // Se for Rascunho, exibe o mini-calendário na coluna de Data
                 const celulaData = ag.status === "Rascunho"
                     ? `<input type="date" value="${ag.data}" onchange="alterarDataRascunho('${ag.senhaAgendamento}', this.value)" style="border: 1px solid #ccc; border-radius: 4px; padding: 2px 4px; font-weight: bold; cursor: pointer;">`
                     : `<span style="color: #212121;">${dataFormat}</span>`;
@@ -705,9 +630,9 @@ function carregarDados() {
             };
 
             if (ag.status === "Rascunho") {
-                rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
+                if (atendeBusca) rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
             } else {
-                if (ag.data >= dIni && ag.data <= dFim) {
+                if (ag.data >= dIni && ag.data <= dFim && atendeBusca) {
                     corpo.innerHTML += gerarLinha("check-export");
                     totalCargas++;
                 }
@@ -718,7 +643,6 @@ function carregarDados() {
         if (spanTotal) spanTotal.innerText = totalCargas;
 
         atualizarIconesFiltro();
-        atualizarSetasOrdenacao();
     });
 }
 
@@ -1563,12 +1487,9 @@ function atualizarIconesFiltro() {
 
 let campoFiltroAtual = null;
 
-// --- MODAL DE FILTRO INTELIGENTE COM OPÇÕES DE ORDENAÇÃO A-Z / Z-A ---
-let ordemFiltroModal = 'ASC'; // Variável global para controle da ordenação das opções
-
+// --- MODAL DE FILTRO INTELIGENTE (EFEITO CASCATA) ---
 window.abrirModalFiltroColuna = async (campo) => {
     campoFiltroAtual = campo;
-    ordemFiltroModal = 'ASC'; // Define por padrão A-Z ao abrir
     const dIni = document.getElementById('buscaInicio').value;
     const dFim = document.getElementById('buscaFim').value;
 
@@ -1588,14 +1509,6 @@ window.abrirModalFiltroColuna = async (campo) => {
 
     document.getElementById('tituloModalFiltro').innerText = titulos[campo] || "Filtrar Opções";
 
-    await renderizarOpcoesModalFiltro();
-    document.getElementById('modalFiltroColuna').style.display = 'block';
-};
-
-// Renderiza as opções do modal aplicando a ordem definida (A-Z ou Z-A)
-async function renderizarOpcoesModalFiltro() {
-    const dIni = document.getElementById('buscaInicio').value;
-    const dFim = document.getElementById('buscaFim').value;
     const snap = await getDocs(collection(db, "agendamentos"));
     const opcoesUnicas = new Set();
 
@@ -1603,9 +1516,10 @@ async function renderizarOpcoesModalFiltro() {
         const d = docSnap.data();
         if (d.data >= dIni && d.data <= dFim && d.status !== "Rascunho") {
 
+            // Avalia se o registro passa por TODOS OS OUTROS FILTROS (Efeito Cascata)
             let passaOutrosFiltros = true;
             for (const key in filtrosColunas) {
-                if (key !== campoFiltroAtual && filtrosColunas[key].length > 0) {
+                if (key !== campo && filtrosColunas[key].length > 0) {
                     const valReg = limparEspacos(d[key]).toUpperCase();
                     if (!filtrosColunas[key].includes(valReg)) {
                         passaOutrosFiltros = false;
@@ -1614,8 +1528,8 @@ async function renderizarOpcoesModalFiltro() {
                 }
             }
 
-            if (passaOutrosFiltros && d[campoFiltroAtual]) {
-                opcoesUnicas.add(limparEspacos(d[campoFiltroAtual]).toUpperCase());
+            if (passaOutrosFiltros && d[campo]) {
+                opcoesUnicas.add(limparEspacos(d[campo]).toUpperCase());
             }
         }
     });
@@ -1626,17 +1540,9 @@ async function renderizarOpcoesModalFiltro() {
     if (opcoesUnicas.size === 0) {
         lista.innerHTML = "<li style='padding:10px; color:#999;'>Nenhuma opção encontrada neste período/combinação.</li>";
     } else {
-        const valoresJaSelecionados = filtrosColunas[campoFiltroAtual] || [];
-        let opcoesArray = Array.from(opcoesUnicas);
+        const valoresJaSelecionados = filtrosColunas[campo] || [];
 
-        // Aplica Ordenação
-        opcoesArray.sort((a, b) => {
-            return ordemFiltroModal === 'ASC' 
-                ? a.localeCompare(b, 'pt-BR') 
-                : b.localeCompare(a, 'pt-BR');
-        });
-
-        opcoesArray.forEach(opcao => {
+        Array.from(opcoesUnicas).sort().forEach(opcao => {
             const checked = valoresJaSelecionados.includes(opcao) ? 'checked' : '';
             lista.innerHTML += `
                 <li style="padding: 10px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; font-weight: bold; color: #212121;">
@@ -1645,12 +1551,8 @@ async function renderizarOpcoesModalFiltro() {
                 </li>`;
         });
     }
-}
 
-// Função para alternar ordenação no Modal do Filtro
-window.ordenarOpcoesFiltroModal = (direcao) => {
-    ordemFiltroModal = direcao;
-    renderizarOpcoesModalFiltro();
+    document.getElementById('modalFiltroColuna').style.display = 'block';
 };
 
 window.toggleSelecionarTodasOpcoesFiltro = (e) => {
