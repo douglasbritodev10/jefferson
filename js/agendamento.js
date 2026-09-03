@@ -1658,7 +1658,7 @@ window.confirmarFiltroColuna = () => {
     const selecionados = Array.from(document.querySelectorAll('.chk-filtro-opcao:checked')).map(c => c.value);
     filtrosColunas[campoFiltroAtual] = selecionados;
 
-    atualizarIconesFiltro();
+    atualizarIconesFiltroEOrdenacao();
     fecharModais();
     carregarDados();
 };
@@ -1666,7 +1666,7 @@ window.confirmarFiltroColuna = () => {
 window.limparFiltroColuna = () => {
     filtrosColunas[campoFiltroAtual] = [];
 
-    atualizarIconesFiltro();
+    atualizarIconesFiltroEOrdenacao();
     fecharModais();
     carregarDados();
 };
