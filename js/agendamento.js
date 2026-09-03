@@ -549,7 +549,48 @@ window.exportarExcel = async (modo) => {
     a.click();
 };
 
-// --- FILTRO E BUSCA GLOBAL EXPANDIDA (INCLUINDO COMPOSIÇÃO) ---
+// --- VARIÁVEIS DE CONTROLE DE ORDENAÇÃO AO VIVO ---
+let colunaOrdenacaoAtual = null; // Ex: 'central', 'fornecedor', etc.
+let direcaoOrdenacaoAtual = 'asc'; // 'asc' ou 'desc'
+
+// --- FUNÇÃO PARA MANIPULAR A ORDENAÇÃO DA TABELA ---
+window.ordenarTabelaPor = (campo) => {
+    if (colunaOrdenacaoAtual === campo) {
+        // Inverte a direção se clicar na mesma coluna
+        direcaoOrdenacaoAtual = direcaoOrdenacaoAtual === 'asc' ? 'desc' : 'asc';
+    } else {
+        colunaOrdenacaoAtual = campo;
+        direcaoOrdenacaoAtual = 'asc';
+    }
+
+    // Atualiza visualmente os ícones das setas nos cabeçalhos
+    atualizarSetasOrdenacao();
+
+    // Recarrega e renderiza a tabela com a nova ordenação aplicada
+    carregarDados();
+};
+
+// --- ATUALIZA OS ÍCONES DAS SETAS DE ORDENAÇÃO NO CABEÇALHO ---
+function atualizarSetasOrdenacao() {
+    const colunas = ['central', 'fornecedor', 'tipoProduto', 'linhaSeparacao'];
+    
+    colunas.forEach(col => {
+        const elSeta = document.getElementById(`sort-icon-${col}`);
+        if (!elSeta) return;
+
+        if (colunaOrdenacaoAtual === col) {
+            elSeta.className = direcaoOrdenacaoAtual === 'asc' 
+                ? 'fas fa-sort-alpha-down' 
+                : 'fas fa-sort-alpha-down-alt';
+            elSeta.style.color = '#D32F2F'; // Destaca a coluna ordenada
+        } else {
+            elSeta.className = 'fas fa-sort';
+            elSeta.style.color = '#ccc';
+        }
+    });
+}
+
+// --- CARREGAR DADOS DA TABELA COM ORDENAÇÃO AO VIVO E BUSCA AMPLIADA ---
 function carregarDados() {
     onSnapshot(query(collection(db, "agendamentos"), orderBy("timestamp", "desc")), (snap) => {
         const emEdicao = document.getElementById('btnAtualizar').style.display === 'inline-block';
@@ -567,21 +608,17 @@ function carregarDados() {
         rascunhos.innerHTML = "";
         let totalCargas = 0;
 
+        // Armazena os agendamentos filtrados para poder ordenar ao vivo antes de desenhar na tela
+        let listaAgendamentos = [];
+
         snap.forEach(d => {
             const ag = d.data();
-            const cores = getCoresPorTipo(ag.tipoProduto);
             const dataFormat = ag.data ? ag.data.split('-').reverse().join('/') : '-';
 
-            // Tratamento de ponta para busca e filtro
-            const centralTratada = limparEspacos(ag.central).toUpperCase();
-            const fornecedorTratado = limparEspacos(ag.fornecedor).toUpperCase();
-            const tipoTratado = limparEspacos(ag.tipoProduto).toUpperCase();
-            const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
-
-            // Verificação de Filtros Ativos das Colunas
+            // Verificação de Filtros Ativos de Coluna
             let passaFiltroColuna = true;
             for (const key in filtrosColunas) {
-                if (filtrosColunas[key].length > 0) {
+                if (filtrosColunas[key] && filtrosColunas[key].length > 0) {
                     const valRegistro = limparEspacos(ag[key]).toUpperCase();
                     if (!filtrosColunas[key].includes(valRegistro)) {
                         passaFiltroColuna = false;
@@ -590,16 +627,17 @@ function carregarDados() {
                 }
             }
 
-            // Pesquisa ampla na Composição (Código e Descrição)
-            const atendeComposicao = (ag.composicao || []).some(item => 
+            // Busca na Composição (Código ou Descrição)
+            const atendeComposicao = ag.composicao && Array.isArray(ag.composicao) && ag.composicao.some(item => 
                 (item.codigo && String(item.codigo).toLowerCase().includes(termo)) ||
                 (item.descricao && String(item.descricao).toLowerCase().includes(termo))
             );
 
-            // Pesquisa Global Expandida por todas as colunas
-            const atendeBuscaGeral = termo === "" || (
+            // Busca Global Expandida
+            const atendeBusca = passaFiltroColuna && (
+                termo === "" ||
                 (ag.senhaAgendamento && String(ag.senhaAgendamento).toLowerCase().includes(termo)) ||
-                (ag.data && dataFormat.toLowerCase().includes(termo)) ||
+                (ag.data && (ag.data.toLowerCase().includes(termo) || dataFormat.includes(termo))) ||
                 (ag.central && String(ag.central).toLowerCase().includes(termo)) ||
                 (ag.cargas && String(ag.cargas).toLowerCase().includes(termo)) ||
                 (ag.pedido && String(ag.pedido).toLowerCase().includes(termo)) ||
@@ -609,7 +647,32 @@ function carregarDados() {
                 atendeComposicao
             );
 
-            const atendeBusca = passaFiltroColuna && atendeBuscaGeral;
+            if (atendeBusca) {
+                listaAgendamentos.push(ag);
+            }
+        });
+
+        // --- APLICAÇÃO DA ORDENAÇÃO AO VIVO SE HOUVER COLUNA SELECIONADA ---
+        if (colunaOrdenacaoAtual) {
+            listaAgendamentos.sort((a, b) => {
+                const valA = limparEspacos(a[colunaOrdenacaoAtual] || '').toUpperCase();
+                const valB = limparEspacos(b[colunaOrdenacaoAtual] || '').toUpperCase();
+
+                if (direcaoOrdenacaoAtual === 'asc') {
+                    return valA.localeCompare(valB, 'pt-BR');
+                } else {
+                    return valB.localeCompare(valA, 'pt-BR');
+                }
+            });
+        }
+
+        // --- MONTAGEM DA TABELA APÓS A ORDENAÇÃO ---
+        listaAgendamentos.forEach(ag => {
+            const cores = getCoresPorTipo(ag.tipoProduto);
+            const dataFormat = ag.data ? ag.data.split('-').reverse().join('/') : '-';
+            const centralTratada = limparEspacos(ag.central).toUpperCase();
+            const fornecedorTratado = limparEspacos(ag.fornecedor).toUpperCase();
+            const linhaTratada = limparEspacos(ag.linhaSeparacao).toUpperCase();
 
             const badgeTipo = `<span style="background-color: ${cores.bg}; color: ${cores.text}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 11px;">${ag.tipoProduto}</span>`;
 
@@ -642,9 +705,9 @@ function carregarDados() {
             };
 
             if (ag.status === "Rascunho") {
-                if (atendeBusca) rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
+                rascunhos.innerHTML += gerarLinha("check-copy-rascunho");
             } else {
-                if (ag.data >= dIni && ag.data <= dFim && atendeBusca) {
+                if (ag.data >= dIni && ag.data <= dFim) {
                     corpo.innerHTML += gerarLinha("check-export");
                     totalCargas++;
                 }
@@ -655,6 +718,7 @@ function carregarDados() {
         if (spanTotal) spanTotal.innerText = totalCargas;
 
         atualizarIconesFiltro();
+        atualizarSetasOrdenacao();
     });
 }
 
